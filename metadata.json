@@ -1,0 +1,7 @@
+{
+  "name": "Albion Calculation to react",
+  "description": "A high-performance, AI-integrated central hub for tools, data, and productivity.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
