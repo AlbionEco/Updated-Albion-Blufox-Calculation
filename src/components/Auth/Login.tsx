@@ -31,7 +31,7 @@ const Login: React.FC = () => {
       document.cookie = `token=${token};${expires};path=/;SameSite=None;Secure`;
 
       if (document.cookie.includes(`token=${token}`)) {
-        navigate('levapore');
+        navigate('/albion/levapore');
       } else {
         setError("Something went wrong Try Again");
       }
