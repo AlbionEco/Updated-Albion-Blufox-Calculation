@@ -16,7 +16,7 @@ const BlufoxNavbar: React.FC = () => {
 
   const handleLogOut = () => {
     document.cookie = "token=;max-age=1;path=/";
-    window.location.href = "/";
+    window.location.href = "/login";
   };
 
   return (
