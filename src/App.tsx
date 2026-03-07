@@ -33,7 +33,7 @@ export default function App() {
     <Router>
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <Routes>
-          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<Login />} />
           
           <Route path="/" element={
             <ProtectedRoute>

@@ -46,7 +46,7 @@ const Login: React.FC = () => {
         <div className="flex justify-center">
           <img
             className="h-12 w-auto"
-            src="/login/Albion_high_-_logo-removebg-preview.png"
+            src="/Albion_high_-_logo-removebg-preview.png"
             alt="Albion Logo"
           />
         </div>
