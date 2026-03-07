@@ -23,7 +23,7 @@ import ProposalGenerator from './components/CalculatorsBlufox/Proposal/ProposalG
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const hasToken = document.cookie.includes('token=');
   if (!hasToken) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
   return <>{children}</>;
 };
