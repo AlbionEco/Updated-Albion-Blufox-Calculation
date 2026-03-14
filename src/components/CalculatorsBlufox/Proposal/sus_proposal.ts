@@ -3,6 +3,7 @@ import autoTable from "jspdf-autotable";
 import * as docx from "docx";
 import { saveAs } from "file-saver";
 import { loadImage, base64ToUint8Array, formatToDDMMYYYY } from "./utils";
+import { TextWrappingType } from "docx";
 
 // Extend jsPDF type for autotable
 declare module "jspdf" {
@@ -12,6 +13,19 @@ declare module "jspdf" {
       finalY: number;
     };
   }
+}
+
+async function drawBackground(doc: any, watermark: any) {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+
+  const imgWidth = 130;
+  const imgHeight = 130;
+
+  const x = (pageWidth - imgWidth) / 2;
+  const y = (pageHeight - imgHeight) / 2;
+
+  doc.addImage(watermark, "JPG", x, y, imgWidth, imgHeight);
 }
 
 export async function generateSUSProposal(
@@ -42,133 +56,157 @@ export async function generateSUSProposal(
     const workingHr = parseFloat(rawWorkingHr) || 0;
     const offer_Price = parseFloat(rawOfferPrice) || 0;
 
-        //  Initialize Variables for Calculation & PDF Content
-        let membraneSurfaceAreaPerMBR = 0;
-        
-        // Perform calculations based on formulas including SUS series
-        if (module == "SUS097") {
-                    membraneSurfaceAreaPerMBR = 9.7; 
-                } else if (module == "SUS113") {
-                    membraneSurfaceAreaPerMBR = 11.3; 
-                } else if (module == "SUS193") {
-                    membraneSurfaceAreaPerMBR = 19.3; 
-                } else if (module == "SUS227") {
-                    membraneSurfaceAreaPerMBR = 22.7; 
-                } else if (module == "SUS313") {
-                    membraneSurfaceAreaPerMBR = 31.3; 
-                } else if (module == "SUS400") {
-                    membraneSurfaceAreaPerMBR = 40; 
-                }
+    //  Initialize Variables for Calculation & PDF Content
+    let membraneSurfaceAreaPerMBR = 0;
 
-        const effectiveFlowRate = flowRate / 20 //hr;
-        const perTrainFlowRate = +(effectiveFlowRate / noOfTrain);
-        // 1. Math first -> 2. .toFixed() to round -> 3. + to convert back to number
-const RasPumpFlow = +((flowRate / 24) * 3).toFixed(2);
-const TotalNumberOfModule = Math.ceil((flowRate * 1000) / (flux * workingHr * membraneSurfaceAreaPerMBR));
-const NoofModulePerTrain = Math.ceil(TotalNumberOfModule / noOfTrain);
-const MembraneSurfaceAreaPerTrain = NoofModulePerTrain * membraneSurfaceAreaPerMBR;
-const TotalMembraneSurfaceArea = +(TotalNumberOfModule * membraneSurfaceAreaPerMBR).toFixed(1);
-const OperatingFlux = +(flux * 0.0238).toFixed(1);
-const rawTimeFlux = +(flux * 83.34 / 100).toFixed(1);
-const Timeflux = +(rawTimeFlux * 0.0238).toFixed(1);
+    // Perform calculations based on formulas including SUS series
+    if (module == "SUS097") {
+      membraneSurfaceAreaPerMBR = 9.7;
+    } else if (module == "SUS113") {
+      membraneSurfaceAreaPerMBR = 11.3;
+    } else if (module == "SUS193") {
+      membraneSurfaceAreaPerMBR = 19.3;
+    } else if (module == "SUS227") {
+      membraneSurfaceAreaPerMBR = 22.7;
+    } else if (module == "SUS313") {
+      membraneSurfaceAreaPerMBR = 31.3;
+    } else if (module == "SUS400") {
+      membraneSurfaceAreaPerMBR = 40;
+    }
 
+    const effectiveFlowRate = flowRate / 20; //hr;
+    const perTrainFlowRate = +(effectiveFlowRate / noOfTrain);
+    // 1. Math first -> 2. .toFixed() to round -> 3. + to convert back to number
+    const RasPumpFlow = +((flowRate / 24) * 3).toFixed(2);
+    const TotalNumberOfModule = Math.ceil(
+      (flowRate * 1000) / (flux * workingHr * membraneSurfaceAreaPerMBR),
+    );
+    const NoofModulePerTrain = Math.ceil(TotalNumberOfModule / noOfTrain);
+    const MembraneSurfaceAreaPerTrain =
+      NoofModulePerTrain * membraneSurfaceAreaPerMBR;
+    const TotalMembraneSurfaceArea = +(
+      TotalNumberOfModule * membraneSurfaceAreaPerMBR
+    ).toFixed(1);
+    const OperatingFlux = +(flux * 0.0238).toFixed(1);
+    const rawTimeFlux = +((flux * 83.34) / 100).toFixed(1);
+    const Timeflux = +(rawTimeFlux * 0.0238).toFixed(1);
 
-        let length = 0;
-        let width = 0;
-        let height = 0;
-        let effectiveWaterDepth = 0;
-        let width2 = 0;
-        let surfaceareapertrain = 0;
-        let boxpipe = 0;
-        if (TotalNumberOfModule >= 15) {
-            boxpipe = 100;
-        } else {
-            boxpipe = 80;
-        }
+    let length = 0;
+    let width = 0;
+    let height = 0;
+    let effectiveWaterDepth = 0;
+    let width2 = 0;
+    let surfaceareapertrain = 0;
+    let boxpipe = 0;
+    if (TotalNumberOfModule >= 15) {
+      boxpipe = 100;
+    } else {
+      boxpipe = 80;
+    }
 
-        // Logic updated to handle SUS113 dimensions
-        if (module == "SUS097") {
-          length = ((NoofModulePerTrain * 33) + ((NoofModulePerTrain + 1) * 15) + 100) / 1000;
-          width = 0.78;
-          height = 1.6;
-          effectiveWaterDepth = 2.6;
-          width2 = 1.85;
-          surfaceareapertrain = (Number(length) + 0.6) * (width + 0.6) * (height + 0.7);
-        } else if (module == "SUS113") {
-          length = ((NoofModulePerTrain * 33) + ((NoofModulePerTrain + 1) * 15) + 100) / 1000;
-          width = 0.78;
-          height = 1.8;          
-          effectiveWaterDepth = 2.8;
-          width2 = 1.85;
-          surfaceareapertrain = (Number(length) + 0.6) * (width + 0.6) * (height + 0.7);
-        } else if (module == "SUS193") {
-          length = ((NoofModulePerTrain * 33) + ((NoofModulePerTrain + 1) * 15) + 100) / 1000;
-          width = 1.35;
-          height = 1.6;
-          effectiveWaterDepth = 2.6;
-          width2 = 2.5;
-          surfaceareapertrain = (Number(length) + 0.6) * (width + 0.6) * (height + 0.7);
-        } else if (module == "SUS227") {
-          length = ((NoofModulePerTrain * 33) + ((NoofModulePerTrain + 1) * 15) + 100) / 1000;
-          width = 1.35;
-          height = 1.8;
-          effectiveWaterDepth = 2.8;
-          width2 = 2.5;
-          surfaceareapertrain = (Number(length) + 0.6) * (width + 0.6) * (height + 0.7);
-        } else if (module == "SUS313") {
-          length = ((NoofModulePerTrain * 33) + ((NoofModulePerTrain + 1) * 15) + 100) / 1000;
-          width = 1.35;
-          height = 2.3;
-          effectiveWaterDepth = 3.3;
-          width2 = 2.5;
-          surfaceareapertrain = (Number(length) + 0.6) * (width + 0.6) * (height + 0.7);
-        } else if (module == "SUS400") {
-          length = ((NoofModulePerTrain * 33) + ((NoofModulePerTrain + 1) * 15) + 100) / 1000;
-          width = 1.35;
-          height = 2.3;
-          effectiveWaterDepth = 3.3;
-          width2 = 2.5;
-          surfaceareapertrain = (Number(length) + 0.6) * (width + 0.6) * (height + 0.7);
-        }
+    // Logic updated to handle SUS113 dimensions
+    if (module == "SUS097") {
+      length =
+        (NoofModulePerTrain * 33 + (NoofModulePerTrain + 1) * 15 + 100) / 1000;
+      width = 0.78;
+      height = 1.6;
+      effectiveWaterDepth = 2.6;
+      width2 = 1.85;
+      surfaceareapertrain =
+        (Number(length) + 0.6) * (width + 0.6) * (height + 0.7);
+    } else if (module == "SUS113") {
+      length =
+        (NoofModulePerTrain * 33 + (NoofModulePerTrain + 1) * 15 + 100) / 1000;
+      width = 0.78;
+      height = 1.8;
+      effectiveWaterDepth = 2.8;
+      width2 = 1.85;
+      surfaceareapertrain =
+        (Number(length) + 0.6) * (width + 0.6) * (height + 0.7);
+    } else if (module == "SUS193") {
+      length =
+        (NoofModulePerTrain * 33 + (NoofModulePerTrain + 1) * 15 + 100) / 1000;
+      width = 1.35;
+      height = 1.6;
+      effectiveWaterDepth = 2.6;
+      width2 = 2.5;
+      surfaceareapertrain =
+        (Number(length) + 0.6) * (width + 0.6) * (height + 0.7);
+    } else if (module == "SUS227") {
+      length =
+        (NoofModulePerTrain * 33 + (NoofModulePerTrain + 1) * 15 + 100) / 1000;
+      width = 1.35;
+      height = 1.8;
+      effectiveWaterDepth = 2.8;
+      width2 = 2.5;
+      surfaceareapertrain =
+        (Number(length) + 0.6) * (width + 0.6) * (height + 0.7);
+    } else if (module == "SUS313") {
+      length =
+        (NoofModulePerTrain * 33 + (NoofModulePerTrain + 1) * 15 + 100) / 1000;
+      width = 1.35;
+      height = 2.3;
+      effectiveWaterDepth = 3.3;
+      width2 = 2.5;
+      surfaceareapertrain =
+        (Number(length) + 0.6) * (width + 0.6) * (height + 0.7);
+    } else if (module == "SUS400") {
+      length =
+        (NoofModulePerTrain * 33 + (NoofModulePerTrain + 1) * 15 + 100) / 1000;
+      width = 1.35;
+      height = 2.3;
+      effectiveWaterDepth = 3.3;
+      width2 = 2.5;
+      surfaceareapertrain =
+        (Number(length) + 0.6) * (width + 0.6) * (height + 0.7);
+    }
 
-        const TotalMembraneTankVolume = Number((surfaceareapertrain).toFixed(2));
-        const lengthinsidepertank = Number((TotalMembraneTankVolume / effectiveWaterDepth / width2).toFixed(1));
-        const RequiredTotalFlowrateforpeakflux = Number((flowRate / workingHr).toFixed(2));
-        const filteration = 8;
+    const TotalMembraneTankVolume = Number(surfaceareapertrain.toFixed(2));
+    const lengthinsidepertank = Number(
+      (TotalMembraneTankVolume / effectiveWaterDepth / width2).toFixed(1),
+    );
+    const RequiredTotalFlowrateforpeakflux = Number(
+      (flowRate / workingHr).toFixed(2),
+    );
+    const filteration = 8;
 
-        const backwash = 1;
-        const RequiredBackwashFlowRate = Number((RequiredTotalFlowrateforpeakflux * 1.5).toFixed(2));
-        let RequiredtotalAirFlowRate = 0;
-        
-        // Updated to handle SUS prefix check if needed, or keep generic BF check if applicable
-        if (module.substring(0, 2) == "BF") {
-            RequiredtotalAirFlowRate = Number((TotalMembraneSurfaceArea * 0.3).toFixed(2));
-        }  else if (module.substring(0, 3) == "SUS") {
-          RequiredtotalAirFlowRate = Number((TotalMembraneSurfaceArea * 0.25).toFixed(2));
-        }
+    const backwash = 1;
+    const RequiredBackwashFlowRate = Number(
+      (RequiredTotalFlowrateforpeakflux * 1.5).toFixed(2),
+    );
+    let RequiredtotalAirFlowRate = 0;
 
-        let ModuleSize = "";
+    // Updated to handle SUS prefix check if needed, or keep generic BF check if applicable
+    if (module.substring(0, 2) == "BF") {
+      RequiredtotalAirFlowRate = Number(
+        (TotalMembraneSurfaceArea * 0.3).toFixed(2),
+      );
+    } else if (module.substring(0, 3) == "SUS") {
+      RequiredtotalAirFlowRate = Number(
+        (TotalMembraneSurfaceArea * 0.25).toFixed(2),
+      );
+    }
 
-        if (module == "SUS097") {
-            ModuleSize = "1300 x 680 x 30"
-        } else if (module == "SUS113") {
-            ModuleSize = "1500 x 680 x 30";
-        } else if (module == "SUS193") {
-            ModuleSize = "1300 x 1250 x 30";
-        } else if (module == "SUS227") {
-            ModuleSize = "1500 x 1250 x 30";
-        } else if (module == "SUS313") {
-            ModuleSize = "2000 x 1250 x 30";
-        } else if (module == "SUS400") {
-            ModuleSize = "2000 x 1250 x 30";
-        }
+    let ModuleSize = "";
+
+    if (module == "SUS097") {
+      ModuleSize = "1300 x 680 x 30";
+    } else if (module == "SUS113") {
+      ModuleSize = "1500 x 680 x 30";
+    } else if (module == "SUS193") {
+      ModuleSize = "1300 x 1250 x 30";
+    } else if (module == "SUS227") {
+      ModuleSize = "1500 x 1250 x 30";
+    } else if (module == "SUS313") {
+      ModuleSize = "2000 x 1250 x 30";
+    } else if (module == "SUS400") {
+      ModuleSize = "2000 x 1250 x 30";
+    }
 
     setProgress(15, "Loading Images...");
     const headerImgData = await loadImage("/Images for Proposal/header.jpg");
     const footerImgData = await loadImage("/Images for Proposal/footer.jpg");
-    const susImg = await loadImage(
-      "/Images for Proposal/SUS_img.jpg",
-    );
+    const susImg = await loadImage("/Images for Proposal/SUS_img.jpg");
     const pidImg = await loadImage("/Images for Proposal/MembraneP&ID.jpg");
     const gaImg = await loadImage("/Images for Proposal/SUS_GADrawing.jpg");
     const cycleImg = await loadImage(
@@ -177,6 +215,8 @@ const Timeflux = +(rawTimeFlux * 0.0238).toFixed(1);
 
     setProgress(30, "Initializing PDF...");
     const doc = new jsPDF({ compress: true, unit: "mm", format: "a4" });
+    const watermark = await loadImage("/Blufox Logo.jpg");
+    await drawBackground(doc, watermark);
     const pageWidth = doc.internal.pageSize.width;
     const pageHeight = doc.internal.pageSize.height;
     const headerHeight = 25;
@@ -252,6 +292,7 @@ const Timeflux = +(rawTimeFlux * 0.0238).toFixed(1);
     // Page 2 - Product Features
     setProgress(50, "Creating Product Features...");
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
     doc.setFontSize(14);
     doc.setFont("helvetica", "bolditalic");
@@ -306,6 +347,7 @@ const Timeflux = +(rawTimeFlux * 0.0238).toFixed(1);
 
     // Page 3 - More Features & Process
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
     addBullet(
       "Reproduction of Nitro bacteria:",
@@ -340,6 +382,7 @@ The filtration takes place by means of suction pump which delivers the treated w
 
     // Page 4 - Operating Conditions & Specs
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
     doc.setFontSize(14);
     doc.setFont("helvetica", "bolditalic");
@@ -399,16 +442,19 @@ The filtration takes place by means of suction pump which delivers the treated w
       startY: currentY,
       head: [["Items", "Unit"]],
       body: [
-['Material of Fiber', 'Reinforced PVDF with PET Layer Support'],
-                ['Element Header', 'ABS resin (Heavy Duty) with Side SS304 water collector pipe'],
-                ['Pore size', '0.1 Micron (outside - in) '],
-                ['Fiber Size (OD/ID)', '2.5mm / 1.9mm'], 
-                ['Surface Area (MBR)', `${membraneSurfaceAreaPerMBR} m2/module`],
-                ['Operation Pressure', '2.95 to 17.71 inHg (minus)'],
-                ['Backwash Pressure ', 'Max 0.2 MPa'],
-                ['Backwash Time ', '30~120 sec.'],
-                ['Turbidity outlet', '<1 NTU'],
-                ['Element Dimension', `${ModuleSize} mm (Drawing as below)`],
+        ["Material of Fiber", "Reinforced PVDF with PET Layer Support"],
+        [
+          "Element Header",
+          "ABS resin (Heavy Duty) with Side SS304 water collector pipe",
+        ],
+        ["Pore size", "0.1 Micron (outside - in) "],
+        ["Fiber Size (OD/ID)", "2.5mm / 1.9mm"],
+        ["Surface Area (MBR)", `${membraneSurfaceAreaPerMBR} m2/module`],
+        ["Operation Pressure", "2.95 to 17.71 inHg (minus)"],
+        ["Backwash Pressure ", "Max 0.2 MPa"],
+        ["Backwash Time ", "30~120 sec."],
+        ["Turbidity outlet", "<1 NTU"],
+        ["Element Dimension", `${ModuleSize} mm (Drawing as below)`],
       ],
       tableWidth: 175,
       margin: { left: 15 },
@@ -420,10 +466,19 @@ The filtration takes place by means of suction pump which delivers the treated w
       },
       alternateRowStyles: { fillColor: [240, 240, 240] },
       bodyStyles: { fillColor: [255, 255, 255] },
+      didParseCell: function (data) {
+        const rowLabel = data.row.cells[0].raw; // Gets the label from the first column
+
+        // If it's the specific row AND it's the second column (index 1)
+        if (rowLabel === "Surface Area (MBR)" && data.column.index === 1) {
+          data.cell.styles.fontStyle = "bold";
+        }
+      },
     });
 
     // Page 5 - P&ID
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
     doc.setFontSize(14);
     doc.setFont("helvetica", "bolditalic");
@@ -433,6 +488,7 @@ The filtration takes place by means of suction pump which delivers the treated w
 
     // Page 6 - GA Drawing
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
     doc.setFontSize(14);
     doc.setFont("helvetica", "bolditalic");
@@ -442,6 +498,7 @@ The filtration takes place by means of suction pump which delivers the treated w
 
     // Page 7 - Offer Parameters
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
     doc.setFontSize(14);
     doc.setFont("helvetica", "bolditalic");
@@ -452,23 +509,51 @@ The filtration takes place by means of suction pump which delivers the treated w
       startY: currentY,
       head: [["Parameters", "Unit", "Range"]],
       body: [
-        ['Flow Rate of the system', 'KLD', `${flowRate}`],
-                ['Effective flow Rate (Considering loss of relax & Backwash)', 'm3/hr', `${effectiveFlowRate.toFixed(2)}`],
-                ['Design Frame/Train Qty', 'Nos', `${noOfTrain}`],
-                ['Per Frame/Train Flow Rate ', 'm3/hr', `${perTrainFlowRate}`],
-                ['Design Flux (Avg.)', 'LMH', `${flux}`],
-                ['Total MBR Module Required(BLUFOX®)', 'Nos', `${TotalNumberOfModule}`],
-                ['Per Frame MBR Module Required', 'No.', `${NoofModulePerTrain}`],
-                ['Per Frame MBR Module Surface Area', 'm2', `${MembraneSurfaceAreaPerTrain}`],
-                ['Total MBR Membrane Surface Area', 'm2', `${TotalMembraneSurfaceArea}`],
-                ['Total MBR Air Required', 'm3/hr', `${RequiredtotalAirFlowRate}`],
-                ['MBR Frame/Train Size (Each)', 'L x W x H mm', `${Math.ceil((length * 1000))} x ${(Math.ceil((width) * 1000))} x ${Math.ceil((height * 1000))}`],
-                ['MBR Frame MOC', '-', `SS304`],
-                ['MBR Tank Volume Required (Approx.)', 'm3', `${TotalMembraneTankVolume}`],
-                ['Permeate Pump Flow @ 12-13m Head', 'm3/hr', `${RequiredTotalFlowrateforpeakflux}`],
-                ['Back Wash Pump Flow @ 10m Head ', 'm3/hr', `${RequiredBackwashFlowRate}`],
-                ['RAS Pump Flow @ 15m Head ', 'm3/hr', `${RasPumpFlow}`],
-           ],
+        ["Flow Rate of the system", "KLD", `${flowRate}`],
+        [
+          "Effective flow Rate (Considering loss of relax & Backwash)",
+          "m3/hr",
+          `${effectiveFlowRate.toFixed(2)}`,
+        ],
+        ["Design Frame/Train Qty", "Nos", `${noOfTrain}`],
+        ["Per Frame/Train Flow Rate ", "m3/hr", `${perTrainFlowRate}`],
+        ["Design Flux (Avg.)", "LMH", `${flux}`],
+        ["Total MBR Module Required(BLUFOX®)", "Nos", `${TotalNumberOfModule}`],
+        ["Per Frame MBR Module Required", "No.", `${NoofModulePerTrain}`],
+        [
+          "Per Frame MBR Module Surface Area",
+          "m2",
+          `${MembraneSurfaceAreaPerTrain}`,
+        ],
+        [
+          "Total MBR Membrane Surface Area",
+          "m2",
+          `${TotalMembraneSurfaceArea}`,
+        ],
+        ["Total MBR Air Required", "m3/hr", `${RequiredtotalAirFlowRate}`],
+        [
+          "MBR Frame/Train Size (Each)",
+          "L x W x H mm",
+          `${Math.ceil(length * 1000)} x ${Math.ceil(width * 1000)} x ${Math.ceil(height * 1000)}`,
+        ],
+        ["MBR Frame MOC", "-", `SS304`],
+        [
+          "MBR Tank Volume Required (Approx.)",
+          "m3",
+          `${TotalMembraneTankVolume}`,
+        ],
+        [
+          "Permeate Pump Flow @ 12-13m Head",
+          "m3/hr",
+          `${RequiredTotalFlowrateforpeakflux}`,
+        ],
+        [
+          "Back Wash Pump Flow @ 10m Head ",
+          "m3/hr",
+          `${RequiredBackwashFlowRate}`,
+        ],
+        ["RAS Pump Flow @ 15m Head ", "m3/hr", `${RasPumpFlow}`],
+      ],
       tableWidth: 175,
       margin: { left: 15 },
       theme: "grid",
@@ -477,7 +562,7 @@ The filtration takes place by means of suction pump which delivers the treated w
         fontStyle: "bold",
         halign: "left",
       },
-      styles: { fontStyle: "normal", halign: "left", textColor: 0 },
+      styles: { fontStyle: "normal", halign: "center", textColor: 0 },
       alternateRowStyles: { fillColor: [240, 240, 240] },
       bodyStyles: { fillColor: [255, 255, 255] },
     });
@@ -505,6 +590,7 @@ The filtration takes place by means of suction pump which delivers the treated w
 
     // Page 8 - Feed Limits
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
@@ -580,6 +666,7 @@ The filtration takes place by means of suction pump which delivers the treated w
 
     // Page 9 - Cycle & Step Chart
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
@@ -653,6 +740,7 @@ The filtration takes place by means of suction pump which delivers the treated w
 
     // Page 10 - Commercial
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
     doc.setFontSize(14);
     doc.setFont("helvetica", "bolditalic");
@@ -794,9 +882,10 @@ The filtration takes place by means of suction pump which delivers the treated w
     const pageBottomLimit = pageHeight - footerHeight - 10; // Buffer space before footer
 
     // Function to handle Page Breaks
-    function checkPageBreak(requiredSpace) {
+    async function checkPageBreak(requiredSpace) {
       if (currentY + requiredSpace > pageBottomLimit) {
         doc.addPage();
+        await drawBackground(doc, watermark);
         // add header and footet for the new page
         applyHeaderFooter();
         currentY = headerHeight + 15; // Reset Y position for new page
@@ -805,6 +894,7 @@ The filtration takes place by means of suction pump which delivers the treated w
 
     // 1. Force a new page for the start of this section
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
 
     // --- SPECIAL TERMS (Dynamic Length) ---
@@ -907,125 +997,158 @@ export async function generateSUSWordProposal(
     const offer_Price = parseFloat(rawOfferPrice) || 0;
 
     //  Initialize Variables for Calculation & PDF Content
-        let membraneSurfaceAreaPerMBR = 0;
-        
-        // Perform calculations based on formulas including SUS series
-        if (module == "SUS097") {
-                    membraneSurfaceAreaPerMBR = 9.7; 
-                } else if (module == "SUS113") {
-                    membraneSurfaceAreaPerMBR = 11.3; 
-                } else if (module == "SUS193") {
-                    membraneSurfaceAreaPerMBR = 19.3; 
-                } else if (module == "SUS227") {
-                    membraneSurfaceAreaPerMBR = 22.7; 
-                } else if (module == "SUS313") {
-                    membraneSurfaceAreaPerMBR = 31.3; 
-                } else if (module == "SUS400") {
-                    membraneSurfaceAreaPerMBR = 40; 
-                }
+    let membraneSurfaceAreaPerMBR = 0;
 
-        const effectiveFlowRate = flowRate / 20 //hr;
-        const perTrainFlowRate = +(effectiveFlowRate / noOfTrain);
-        // 1. Math first -> 2. .toFixed() to round -> 3. + to convert back to number
-const RasPumpFlow = +((flowRate / 24) * 3).toFixed(2);
-const TotalNumberOfModule = Math.ceil((flowRate * 1000) / (flux * workingHr * membraneSurfaceAreaPerMBR));
-const NoofModulePerTrain = Math.ceil(TotalNumberOfModule / noOfTrain);
-const MembraneSurfaceAreaPerTrain = NoofModulePerTrain * membraneSurfaceAreaPerMBR;
-const TotalMembraneSurfaceArea = +(TotalNumberOfModule * membraneSurfaceAreaPerMBR).toFixed(1);
-const OperatingFlux = +(flux * 0.0238).toFixed(1);
-const rawTimeFlux = +(flux * 83.34 / 100).toFixed(1);
-const Timeflux = +(rawTimeFlux * 0.0238).toFixed(1);
+    // Perform calculations based on formulas including SUS series
+    if (module == "SUS097") {
+      membraneSurfaceAreaPerMBR = 9.7;
+    } else if (module == "SUS113") {
+      membraneSurfaceAreaPerMBR = 11.3;
+    } else if (module == "SUS193") {
+      membraneSurfaceAreaPerMBR = 19.3;
+    } else if (module == "SUS227") {
+      membraneSurfaceAreaPerMBR = 22.7;
+    } else if (module == "SUS313") {
+      membraneSurfaceAreaPerMBR = 31.3;
+    } else if (module == "SUS400") {
+      membraneSurfaceAreaPerMBR = 40;
+    }
 
+    const effectiveFlowRate = flowRate / 20; //hr;
+    const perTrainFlowRate = +(effectiveFlowRate / noOfTrain);
+    // 1. Math first -> 2. .toFixed() to round -> 3. + to convert back to number
+    const RasPumpFlow = +((flowRate / 24) * 3).toFixed(2);
+    const TotalNumberOfModule = Math.ceil(
+      (flowRate * 1000) / (flux * workingHr * membraneSurfaceAreaPerMBR),
+    );
+    const NoofModulePerTrain = Math.ceil(TotalNumberOfModule / noOfTrain);
+    const MembraneSurfaceAreaPerTrain =
+      NoofModulePerTrain * membraneSurfaceAreaPerMBR;
+    const TotalMembraneSurfaceArea = +(
+      TotalNumberOfModule * membraneSurfaceAreaPerMBR
+    ).toFixed(1);
+    const OperatingFlux = +(flux * 0.0238).toFixed(1);
+    const rawTimeFlux = +((flux * 83.34) / 100).toFixed(1);
+    const Timeflux = +(rawTimeFlux * 0.0238).toFixed(1);
 
-        let length = 0;
-        let width = 0;
-        let height = 0;
-        let effectiveWaterDepth = 0;
-        let width2 = 0;
-        let surfaceareapertrain = 0;
-        let boxpipe = 0;
-        if (TotalNumberOfModule >= 15) {
-            boxpipe = 100;
-        } else {
-            boxpipe = 80;
-        }
+    let length = 0;
+    let width = 0;
+    let height = 0;
+    let effectiveWaterDepth = 0;
+    let width2 = 0;
+    let surfaceareapertrain = 0;
+    let boxpipe = 0;
+    if (TotalNumberOfModule >= 15) {
+      boxpipe = 100;
+    } else {
+      boxpipe = 80;
+    }
 
-        // Logic updated to handle SUS113 dimensions
-        if (module == "SUS097") {
-          length = ((NoofModulePerTrain * 33) + ((NoofModulePerTrain + 1) * 15) + 100) / 1000;
-          width = 0.78;
-          height = 1.6;
-          effectiveWaterDepth = 2.6;
-          width2 = 1.85;
-          surfaceareapertrain = (Number(length) + 0.6) * (width + 0.6) * (height + 0.7);
-        } else if (module == "SUS113") {
-          length = ((NoofModulePerTrain * 33) + ((NoofModulePerTrain + 1) * 15) + 100) / 1000;
-          width = 0.78;
-          height = 1.8;          
-          effectiveWaterDepth = 2.8;
-          width2 = 1.85;
-          surfaceareapertrain = (Number(length) + 0.6) * (width + 0.6) * (height + 0.7);
-        } else if (module == "SUS193") {
-          length = ((NoofModulePerTrain * 33) + ((NoofModulePerTrain + 1) * 15) + 100) / 1000;
-          width = 1.35;
-          height = 1.6;
-          effectiveWaterDepth = 2.6;
-          width2 = 2.5;
-          surfaceareapertrain = (Number(length) + 0.6) * (width + 0.6) * (height + 0.7);
-        } else if (module == "SUS227") {
-          length = ((NoofModulePerTrain * 33) + ((NoofModulePerTrain + 1) * 15) + 100) / 1000;
-          width = 1.35;
-          height = 1.8;
-          effectiveWaterDepth = 2.8;
-          width2 = 2.5;
-          surfaceareapertrain = (Number(length) + 0.6) * (width + 0.6) * (height + 0.7);
-        } else if (module == "SUS313") {
-          length = ((NoofModulePerTrain * 33) + ((NoofModulePerTrain + 1) * 15) + 100) / 1000;
-          width = 1.35;
-          height = 2.3;
-          effectiveWaterDepth = 3.3;
-          width2 = 2.5;
-          surfaceareapertrain = (Number(length) + 0.6) * (width + 0.6) * (height + 0.7);
-        } else if (module == "SUS400") {
-          length = ((NoofModulePerTrain * 33) + ((NoofModulePerTrain + 1) * 15) + 100) / 1000;
-          width = 1.35;
-          height = 2.3;
-          effectiveWaterDepth = 3.3;
-          width2 = 2.5;
-          surfaceareapertrain = (Number(length) + 0.6) * (width + 0.6) * (height + 0.7);
-        }
+    // Logic updated to handle SUS113 dimensions
+    if (module == "SUS097") {
+      length =
+        (NoofModulePerTrain * 33 + (NoofModulePerTrain + 1) * 15 + 100) / 1000;
+      width = 0.78;
+      height = 1.6;
+      effectiveWaterDepth = 2.6;
+      width2 = 1.85;
+      surfaceareapertrain =
+        (Number(length) + 0.6) * (width + 0.6) * (height + 0.7);
+    } else if (module == "SUS113") {
+      length =
+        (NoofModulePerTrain * 33 + (NoofModulePerTrain + 1) * 15 + 100) / 1000;
+      width = 0.78;
+      height = 1.8;
+      effectiveWaterDepth = 2.8;
+      width2 = 1.85;
+      surfaceareapertrain =
+        (Number(length) + 0.6) * (width + 0.6) * (height + 0.7);
+    } else if (module == "SUS193") {
+      length =
+        (NoofModulePerTrain * 33 + (NoofModulePerTrain + 1) * 15 + 100) / 1000;
+      width = 1.35;
+      height = 1.6;
+      effectiveWaterDepth = 2.6;
+      width2 = 2.5;
+      surfaceareapertrain =
+        (Number(length) + 0.6) * (width + 0.6) * (height + 0.7);
+    } else if (module == "SUS227") {
+      length =
+        (NoofModulePerTrain * 33 + (NoofModulePerTrain + 1) * 15 + 100) / 1000;
+      width = 1.35;
+      height = 1.8;
+      effectiveWaterDepth = 2.8;
+      width2 = 2.5;
+      surfaceareapertrain =
+        (Number(length) + 0.6) * (width + 0.6) * (height + 0.7);
+    } else if (module == "SUS313") {
+      length =
+        (NoofModulePerTrain * 33 + (NoofModulePerTrain + 1) * 15 + 100) / 1000;
+      width = 1.35;
+      height = 2.3;
+      effectiveWaterDepth = 3.3;
+      width2 = 2.5;
+      surfaceareapertrain =
+        (Number(length) + 0.6) * (width + 0.6) * (height + 0.7);
+    } else if (module == "SUS400") {
+      length =
+        (NoofModulePerTrain * 33 + (NoofModulePerTrain + 1) * 15 + 100) / 1000;
+      width = 1.35;
+      height = 2.3;
+      effectiveWaterDepth = 3.3;
+      width2 = 2.5;
+      surfaceareapertrain =
+        (Number(length) + 0.6) * (width + 0.6) * (height + 0.7);
+    }
 
-        const TotalMembraneTankVolume = Number((surfaceareapertrain).toFixed(2));
-        const lengthinsidepertank = Number((TotalMembraneTankVolume / effectiveWaterDepth / width2).toFixed(1));
-        const RequiredTotalFlowrateforpeakflux = Number((flowRate / workingHr).toFixed(2));
-        const filteration = 8;
+    const TotalMembraneTankVolume = Number(surfaceareapertrain.toFixed(2));
+    const lengthinsidepertank = Number(
+      (TotalMembraneTankVolume / effectiveWaterDepth / width2).toFixed(1),
+    );
+    const RequiredTotalFlowrateforpeakflux = Number(
+      (flowRate / workingHr).toFixed(2),
+    );
+    const filteration = 8;
 
-        const backwash = 1;
-        const RequiredBackwashFlowRate = Number((RequiredTotalFlowrateforpeakflux * 1.5).toFixed(2));
-        let RequiredtotalAirFlowRate = 0;
-        
-        // Updated to handle SUS prefix check if needed, or keep generic BF check if applicable
-        if (module.substring(0, 2) == "BF") {
-            RequiredtotalAirFlowRate = Number((TotalMembraneSurfaceArea * 0.3).toFixed(2));
-        }  else if (module.substring(0, 3) == "SUS") {
-          RequiredtotalAirFlowRate = Number((TotalMembraneSurfaceArea * 0.25).toFixed(2));
-        }
+    const backwash = 1;
+    const RequiredBackwashFlowRate = Number(
+      (RequiredTotalFlowrateforpeakflux * 1.5).toFixed(2),
+    );
+    let RequiredtotalAirFlowRate = 0;
 
-        let ModuleSize = "";
+    // Updated to handle SUS prefix check if needed, or keep generic BF check if applicable
+    if (module.substring(0, 2) == "BF") {
+      RequiredtotalAirFlowRate = Number(
+        (TotalMembraneSurfaceArea * 0.3).toFixed(2),
+      );
+    } else if (module.substring(0, 3) == "SUS") {
+      RequiredtotalAirFlowRate = Number(
+        (TotalMembraneSurfaceArea * 0.25).toFixed(2),
+      );
+    }
 
-        if (module == "SUS097") {
-            ModuleSize = "1300 x 680 x 30"
-        } else if (module == "SUS113") {
-            ModuleSize = "1500 x 680 x 30";
-        } else if (module == "SUS193") {
-            ModuleSize = "1300 x 1250 x 30";
-        } else if (module == "SUS227") {
-            ModuleSize = "1500 x 1250 x 30";
-        } else if (module == "SUS313") {
-            ModuleSize = "2000 x 1250 x 30";
-        } else if (module == "SUS400") {
-            ModuleSize = "2000 x 1250 x 30";
-        }    setProgress(20, "Loading Image Assets...");
+    let ModuleSize = "";
+
+    if (module == "SUS097") {
+      ModuleSize = "1300 x 680 x 30";
+    } else if (module == "SUS113") {
+      ModuleSize = "1500 x 680 x 30";
+    } else if (module == "SUS193") {
+      ModuleSize = "1300 x 1250 x 30";
+    } else if (module == "SUS227") {
+      ModuleSize = "1500 x 1250 x 30";
+    } else if (module == "SUS313") {
+      ModuleSize = "2000 x 1250 x 30";
+    } else if (module == "SUS400") {
+      ModuleSize = "2000 x 1250 x 30";
+    }
+
+    setProgress(20, "Loading Image Assets...");
+
+    const watermarkBuffer = base64ToUint8Array(
+      await loadImage("/Blufox Logo.jpg"),
+    );
+
     const headerBuffer = base64ToUint8Array(
       await loadImage("/Images for Proposal/header.jpg"),
     );
@@ -1046,7 +1169,7 @@ const Timeflux = +(rawTimeFlux * 0.0238).toFixed(1);
       await loadImage("/Images for Proposal/MBR working cycle programming.jpg"),
     );
 
-      const formattedDate = formatToDDMMYYYY(date);
+    const formattedDate = formatToDDMMYYYY(date);
 
     setProgress(40, "Building Word Document...");
     const {
@@ -1073,16 +1196,16 @@ const Timeflux = +(rawTimeFlux * 0.0238).toFixed(1);
           document: {
             run: {
               font: "Helvetica",
-              size: 22, 
+              size: 22,
               color: "000000",
             },
             paragraph: {
               spacing: {
                 line: 300,
-                lineRule: "auto", 
+                lineRule: "auto",
                 after: 0,
                 before: 0,
-              }, 
+              },
               alignment: AlignmentType.JUSTIFIED,
             },
           },
@@ -1098,11 +1221,37 @@ const Timeflux = +(rawTimeFlux * 0.0238).toFixed(1);
                     new ImageRun({
                       data: headerBuffer,
                       transformation: { width: 795, height: 90 },
-                       type: "jpg",
+                      type: "jpg",
                     }),
                   ],
                   indent: { left: -1200, right: -1200 },
                   spacing: { before: 0, after: 0 },
+                }),
+                new Paragraph({
+                  children: [
+                    new ImageRun({
+                      data: watermarkBuffer,
+                      transformation: {
+                        width: 500,
+                        height: 500,
+                      },
+                      floating: {
+                        horizontalPosition: {
+                          relative: "page",
+                          align: "center",
+                        },
+                        verticalPosition: {
+                          relative: "page",
+                          align: "center",
+                        },
+                        behindDocument: true,
+                        wrap: {
+                          type: TextWrappingType.NONE,
+                        },
+                      },
+                      type: "jpg",
+                    }),
+                  ],
                 }),
               ],
             }),
@@ -1115,7 +1264,7 @@ const Timeflux = +(rawTimeFlux * 0.0238).toFixed(1);
                     new ImageRun({
                       data: footerBuffer,
                       transformation: { width: 795, height: 100 },
-                       type: "jpg",
+                      type: "jpg",
                     }),
                   ],
                   indent: { left: -1200, right: -1200 },
@@ -1146,7 +1295,7 @@ const Timeflux = +(rawTimeFlux * 0.0238).toFixed(1);
                   text: "\t\t\t\t\t\t\tDate: ",
                   size: 24,
                   bold: true,
-           }),
+                }),
                 new TextRun({ text: formattedDate }),
               ],
             }),
@@ -1173,7 +1322,7 @@ const Timeflux = +(rawTimeFlux * 0.0238).toFixed(1);
                 new ImageRun({
                   data: membraneImgBuffer,
                   transformation: { width: 350, height: 400 },
-                   type: "jpg",
+                  type: "jpg",
                 }),
               ],
               alignment: AlignmentType.CENTER,
@@ -1340,13 +1489,21 @@ const Timeflux = +(rawTimeFlux * 0.0238).toFixed(1);
             new Table({
               width: { size: 100, type: WidthType.PERCENTAGE },
               borders: {
-  top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideHorizontal: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideVertical: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-},
+                top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                insideHorizontal: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+                insideVertical: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+              },
               rows: [
                 new TableRow({
                   children: ["Parameters", "Unit", "Range"].map(
@@ -1407,6 +1564,9 @@ const Timeflux = +(rawTimeFlux * 0.0238).toFixed(1);
                                   new TextRun({
                                     text: c.toString(),
                                     color: "4b4b4b",
+                                    bold:
+                                      row[0] === "Surface Area (MBR)" &&
+                                      row.indexOf(c) === 1,
                                   }),
                                 ],
                               }),
@@ -1446,13 +1606,21 @@ const Timeflux = +(rawTimeFlux * 0.0238).toFixed(1);
             new Table({
               width: { size: 100, type: WidthType.PERCENTAGE },
               borders: {
-  top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideHorizontal: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideVertical: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-},
+                top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                insideHorizontal: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+                insideVertical: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+              },
               rows: [
                 new TableRow({
                   children: ["Items", "Unit"].map(
@@ -1481,16 +1649,25 @@ const Timeflux = +(rawTimeFlux * 0.0238).toFixed(1);
                   ),
                 }),
                 ...[
-                   ['Material of Fiber', 'Reinforced PVDF with PET Layer Support'],
-                ['Element Header', 'ABS resin (Heavy Duty) with Side SS304 water collector pipe'],
-                ['Pore size', '0.1 Micron (outside - in) '], 
-                ['Fiber Size (OD/ID)', '2.5mm / 1.9mm'], 
-                ['Surface Area (MBR)', `${membraneSurfaceAreaPerMBR} m2/module`],
-                ['Operation Pressure', '2.95 to 17.71 inHg (minus)'],
-                ['Backwash Pressure ', 'Max 0.2 MPa'],
-                ['Backwash Time ', '30~120 sec.'],
-                ['Turbidity outlet', '<1 NTU'],
-                ['Element Dimension', `${ModuleSize} mm (Drawing as below)`],
+                  [
+                    "Material of Fiber",
+                    "Reinforced PVDF with PET Layer Support",
+                  ],
+                  [
+                    "Element Header",
+                    "ABS resin (Heavy Duty) with Side SS304 water collector pipe",
+                  ],
+                  ["Pore size", "0.1 Micron (outside - in) "],
+                  ["Fiber Size (OD/ID)", "2.5mm / 1.9mm"],
+                  [
+                    "Surface Area (MBR)",
+                    `${membraneSurfaceAreaPerMBR} m2/module`,
+                  ],
+                  ["Operation Pressure", "2.95 to 17.71 inHg (minus)"],
+                  ["Backwash Pressure ", "Max 0.2 MPa"],
+                  ["Backwash Time ", "30~120 sec."],
+                  ["Turbidity outlet", "<1 NTU"],
+                  ["Element Dimension", `${ModuleSize} mm (Drawing as below)`],
                 ].map(
                   (row, index) =>
                     new TableRow({
@@ -1515,6 +1692,7 @@ const Timeflux = +(rawTimeFlux * 0.0238).toFixed(1);
                                     color: "4b4b4b",
                                   }),
                                 ],
+                                alignment: AlignmentType.LEFT,
                               }),
                             ],
                           }),
@@ -1541,7 +1719,7 @@ const Timeflux = +(rawTimeFlux * 0.0238).toFixed(1);
                 new ImageRun({
                   data: pidImgBuffer,
                   transformation: { width: 600, height: 800 },
-                   type: "jpg",
+                  type: "jpg",
                 }),
               ],
               alignment: AlignmentType.CENTER,
@@ -1564,7 +1742,7 @@ const Timeflux = +(rawTimeFlux * 0.0238).toFixed(1);
                 new ImageRun({
                   data: gaImgBuffer,
                   transformation: { width: 600, height: 800 },
-                   type: "jpg",
+                  type: "jpg",
                 }),
               ],
               alignment: AlignmentType.CENTER,
@@ -1585,13 +1763,21 @@ const Timeflux = +(rawTimeFlux * 0.0238).toFixed(1);
             new Table({
               width: { size: 100, type: WidthType.PERCENTAGE },
               borders: {
-  top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideHorizontal: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideVertical: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-},
+                top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                insideHorizontal: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+                insideVertical: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+              },
               rows: [
                 new TableRow({
                   children: ["Parameters", "Unit", "Range"].map(
@@ -1614,22 +1800,66 @@ const Timeflux = +(rawTimeFlux * 0.0238).toFixed(1);
                   ),
                 }),
                 ...[
-                  ['Flow Rate of the system', 'KLD', `${flowRate}`],
-                ['Effective flow Rate (Considering loss of relax & Backwash)', 'm3/hr', `${effectiveFlowRate.toFixed(2)}`],
-                ['Design Frame/Train Qty', 'Nos', `${noOfTrain}`],
-                ['Per Frame/Train Flow Rate ', 'm3/hr', `${perTrainFlowRate}`],
-                ['Design Flux (Avg.)', 'LMH', `${flux}`],
-                ['Total MBR Module Required(BLUFOX®)', 'Nos', `${TotalNumberOfModule}`],
-                ['Per Frame MBR Module Required', 'No.', `${NoofModulePerTrain}`],
-                ['Per Frame MBR Module Surface Area', 'm2', `${MembraneSurfaceAreaPerTrain}`],
-                ['Total MBR Membrane Surface Area', 'm2', `${TotalMembraneSurfaceArea}`],
-                ['Total MBR Air Required', 'm3/hr', `${RequiredtotalAirFlowRate}`],
-                ['MBR Frame/Train Size (Each)', 'L x W x H mm', `${Math.ceil((length * 1000))} x ${(Math.ceil((width) * 1000))} x ${Math.ceil((height * 1000))}`],
-                ['MBR Frame MOC', '-', `SS304`],
-                ['MBR Tank Volume Required (Approx.)', 'm3', `${TotalMembraneTankVolume}`],
-                ['Permeate Pump Flow @ 12-13m Head', 'm3/hr', `${RequiredTotalFlowrateforpeakflux}`],
-                ['Back Wash Pump Flow @ 10m Head ', 'm3/hr', `${RequiredBackwashFlowRate}`],
-                ['RAS Pump Flow @ 15m Head ', 'm3/hr', `${RasPumpFlow}`],
+                  ["Flow Rate of the system", "KLD", `${flowRate}`],
+                  [
+                    "Effective flow Rate (Considering loss of relax & Backwash)",
+                    "m3/hr",
+                    `${effectiveFlowRate.toFixed(2)}`,
+                  ],
+                  ["Design Frame/Train Qty", "Nos", `${noOfTrain}`],
+                  [
+                    "Per Frame/Train Flow Rate ",
+                    "m3/hr",
+                    `${perTrainFlowRate}`,
+                  ],
+                  ["Design Flux (Avg.)", "LMH", `${flux}`],
+                  [
+                    "Total MBR Module Required(BLUFOX®)",
+                    "Nos",
+                    `${TotalNumberOfModule}`,
+                  ],
+                  [
+                    "Per Frame MBR Module Required",
+                    "No.",
+                    `${NoofModulePerTrain}`,
+                  ],
+                  [
+                    "Per Frame MBR Module Surface Area",
+                    "m2",
+                    `${MembraneSurfaceAreaPerTrain}`,
+                  ],
+                  [
+                    "Total MBR Membrane Surface Area",
+                    "m2",
+                    `${TotalMembraneSurfaceArea}`,
+                  ],
+                  [
+                    "Total MBR Air Required",
+                    "m3/hr",
+                    `${RequiredtotalAirFlowRate}`,
+                  ],
+                  [
+                    "MBR Frame/Train Size (Each)",
+                    "L x W x H mm",
+                    `${Math.ceil(length * 1000)} x ${Math.ceil(width * 1000)} x ${Math.ceil(height * 1000)}`,
+                  ],
+                  ["MBR Frame MOC", "-", `SS304`],
+                  [
+                    "MBR Tank Volume Required (Approx.)",
+                    "m3",
+                    `${TotalMembraneTankVolume}`,
+                  ],
+                  [
+                    "Permeate Pump Flow @ 12-13m Head",
+                    "m3/hr",
+                    `${RequiredTotalFlowrateforpeakflux}`,
+                  ],
+                  [
+                    "Back Wash Pump Flow @ 10m Head ",
+                    "m3/hr",
+                    `${RequiredBackwashFlowRate}`,
+                  ],
+                  ["RAS Pump Flow @ 15m Head ", "m3/hr", `${RasPumpFlow}`],
                 ].map(
                   (row, index) =>
                     new TableRow({
@@ -1688,13 +1918,21 @@ const Timeflux = +(rawTimeFlux * 0.0238).toFixed(1);
             new Table({
               width: { size: 100, type: WidthType.PERCENTAGE },
               borders: {
-  top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideHorizontal: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideVertical: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-},
+                top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                insideHorizontal: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+                insideVertical: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+              },
               rows: [
                 new TableRow({
                   children: [
@@ -1819,19 +2057,21 @@ const Timeflux = +(rawTimeFlux * 0.0238).toFixed(1);
               " TDS of treated water <3000 ppm. Chlorides <1500 ppm. Sulphates <700 ppm.",
               " Oil & Grease must not exceed 10 mg/L (emulsified) with no free oil.",
               " Adequate alkalinity must be maintained for biological performance; chemical dosing may be required.",
-            ].map((note, i) => new Paragraph({
-              children: [
-                new TextRun({
-                  text: `${i+1}.  ${note}` 
-                })  
-              ],
-              spacing: { 
-        after: 50,
-    },
-            }
-          )),
+            ].map(
+              (note, i) =>
+                new Paragraph({
+                  children: [
+                    new TextRun({
+                      text: `${i + 1}.  ${note}`,
+                    }),
+                  ],
+                  spacing: {
+                    after: 50,
+                  },
+                }),
+            ),
 
-            new Paragraph({text: ""}),
+            new Paragraph({ text: "" }),
             new Paragraph({
               children: [
                 new TextRun({
@@ -1848,7 +2088,7 @@ const Timeflux = +(rawTimeFlux * 0.0238).toFixed(1);
                 new ImageRun({
                   data: cycleImgBuffer,
                   transformation: { width: 600, height: 150 },
-                   type: "jpg",
+                  type: "jpg",
                 }),
               ],
               alignment: AlignmentType.CENTER,
@@ -1868,13 +2108,21 @@ const Timeflux = +(rawTimeFlux * 0.0238).toFixed(1);
             new Table({
               width: { size: 100, type: WidthType.PERCENTAGE },
               borders: {
-  top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideHorizontal: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideVertical: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-},
+                top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                insideHorizontal: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+                insideVertical: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+              },
               rows: [
                 new TableRow({
                   children: [
@@ -1966,13 +2214,21 @@ const Timeflux = +(rawTimeFlux * 0.0238).toFixed(1);
             new Table({
               width: { size: 100, type: WidthType.PERCENTAGE },
               borders: {
-  top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideHorizontal: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideVertical: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-},
+                top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                insideHorizontal: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+                insideVertical: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+              },
               rows: [
                 new TableRow({
                   children: ["No.", "Item", "Qty.", "Total Price (Rs.)"].map(
@@ -2004,7 +2260,12 @@ const Timeflux = +(rawTimeFlux * 0.0238).toFixed(1);
                         left: 200,
                         right: 200,
                       },
-                      children: [new Paragraph({ text: "1." })],
+                      children: [
+                        new Paragraph({
+                          text: "1.",
+                          alignment: AlignmentType.CENTER,
+                        }),
+                      ],
                     }),
                     new TableCell({
                       verticalAlign: VerticalAlign.CENTER,
@@ -2107,10 +2368,14 @@ const Timeflux = +(rawTimeFlux * 0.0238).toFixed(1);
               ],
             }),
             new Paragraph({
-              text: "• Supply of Membranes Module / only membranes.", indent :{left: 200}
+              text: "• Supply of Membranes Module / only membranes.",
+              indent: { left: 200 },
             }),
-            new Paragraph({ text: "• Supply P&ID", indent :{left: 200} }),
-            new Paragraph({ text: "• Operation Manual", indent :{left: 200} }),
+            new Paragraph({ text: "• Supply P&ID", indent: { left: 200 } }),
+            new Paragraph({
+              text: "• Operation Manual",
+              indent: { left: 200 },
+            }),
             new Paragraph({ text: "" }),
             new Paragraph({
               children: [
@@ -2124,10 +2389,17 @@ const Timeflux = +(rawTimeFlux * 0.0238).toFixed(1);
               ],
             }),
             new Paragraph({
-              text: "• Pre-treatment, Biological, Post Treatment", indent :{left: 200}
+              text: "• Pre-treatment, Biological, Post Treatment",
+              indent: { left: 200 },
             }),
-            new Paragraph({ text: "• Control Panel & Instruments.", indent :{left: 200} }),
-            new Paragraph({ text: "• Pumps, Blowers, Lifting system etc.", indent :{left: 200} }),
+            new Paragraph({
+              text: "• Control Panel & Instruments.",
+              indent: { left: 200 },
+            }),
+            new Paragraph({
+              text: "• Pumps, Blowers, Lifting system etc.",
+              indent: { left: 200 },
+            }),
             new Paragraph({ text: "" }),
             new Paragraph({
               children: [
@@ -2151,7 +2423,7 @@ const Timeflux = +(rawTimeFlux * 0.0238).toFixed(1);
               "8) Membrane Warranty will be one year against manufacturing defect only.",
               "9) Client has to submit the feed water data, Process flow diagram, P&ID, Programming cycle design before commissioning of the plant, if client wants to understand the CEB / CIP process, supplier can provide video training support to client.",
               "10) Any other terms and conditions will be as per Blufox standard terms and conditions.",
-            ].map((t) => new Paragraph({ text: t, indent :{left: 200} })),
+            ].map((t) => new Paragraph({ text: t, indent: { left: 200 } })),
             new Paragraph({ text: "" }),
             ...(special_Terms
               ? [
@@ -2201,7 +2473,7 @@ const Timeflux = +(rawTimeFlux * 0.0238).toFixed(1);
                   color: "00008B",
                 }),
               ],
-            }),            
+            }),
           ],
         },
       ],

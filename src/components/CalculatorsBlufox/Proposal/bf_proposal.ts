@@ -3,6 +3,7 @@ import autoTable from "jspdf-autotable";
 import * as docx from "docx";
 import { saveAs } from "file-saver";
 import { loadImage, base64ToUint8Array, formatToDDMMYYYY } from "./utils";
+import { TextWrappingType } from "docx";
 
 // Extend jsPDF type for autotable
 declare module "jspdf" {
@@ -12,6 +13,19 @@ declare module "jspdf" {
       finalY: number;
     };
   }
+}
+
+async function drawBackground(doc: any, watermark: any) {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+
+  const imgWidth = 130;
+  const imgHeight = 130;
+
+  const x = (pageWidth - imgWidth) / 2;
+  const y = (pageHeight - imgHeight) / 2;
+
+  doc.addImage(watermark, "JPG", x, y, imgWidth, imgHeight);
 }
 
 export async function generateBFProposal(
@@ -172,6 +186,8 @@ export async function generateBFProposal(
 
     setProgress(30, "Initializing PDF...");
     const doc = new jsPDF({ compress: true, unit: "mm", format: "a4" });
+    const watermark = await loadImage("/Blufox Logo.jpg");
+    await drawBackground(doc, watermark);
     const pageWidth = doc.internal.pageSize.width;
     const pageHeight = doc.internal.pageSize.height;
     const headerHeight = 25;
@@ -247,6 +263,7 @@ export async function generateBFProposal(
     // Page 2 - Product Features
     setProgress(50, "Creating Product Features...");
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
     doc.setFontSize(14);
     doc.setFont("helvetica", "bolditalic");
@@ -301,6 +318,7 @@ export async function generateBFProposal(
 
     // Page 3 - More Features & Process
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
     addBullet(
       "Reproduction of Nitro bacteria:",
@@ -335,6 +353,7 @@ The filtration takes place by means of suction pump which delivers the treated w
 
     // Page 4 - Operating Conditions & Specs
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
     doc.setFontSize(14);
     doc.setFont("helvetica", "bolditalic");
@@ -415,10 +434,19 @@ The filtration takes place by means of suction pump which delivers the treated w
       },
       alternateRowStyles: { fillColor: [240, 240, 240] },
       bodyStyles: { fillColor: [255, 255, 255] },
+      didParseCell: function (data) {
+        const rowLabel = data.row.cells[0].raw; // Gets the label from the first column
+
+        // If it's the specific row AND it's the second column (index 1)
+        if (rowLabel === "Surface Area (MBR)" && data.column.index === 1) {
+          data.cell.styles.fontStyle = "bold";
+        }
+      },
     });
 
     // Page 5 - P&ID
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
     doc.setFontSize(14);
     doc.setFont("helvetica", "bolditalic");
@@ -428,6 +456,7 @@ The filtration takes place by means of suction pump which delivers the treated w
 
     // Page 6 - GA Drawing
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
     doc.setFontSize(14);
     doc.setFont("helvetica", "bolditalic");
@@ -437,6 +466,7 @@ The filtration takes place by means of suction pump which delivers the treated w
 
     // Page 7 - Offer Parameters
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
     doc.setFontSize(14);
     doc.setFont("helvetica", "bolditalic");
@@ -474,7 +504,7 @@ The filtration takes place by means of suction pump which delivers the treated w
         ["MBR Tank Volume Required", "m3", `${TotalMembraneTankVolume}`],
         ["Permeate Pump Flow", "m3/hr", `${RequiredTotalFlowrateforpeakflux}`],
         ["Back Wash Pump Flow", "m3/hr", `${RequiredBackwashFlowRate}`],
-        ["MBR Tank Volume Required", "m3", `${TotalMembraneTankVolume}`],
+        ["RAS Pump Flow", "m3/hr", `${RasPumpFlow}`],
       ],
       tableWidth: 175,
       margin: { left: 15 },
@@ -512,6 +542,7 @@ The filtration takes place by means of suction pump which delivers the treated w
 
     // Page 8 - Feed Limits
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
@@ -587,6 +618,7 @@ The filtration takes place by means of suction pump which delivers the treated w
 
     // Page 9 - Cycle & Step Chart
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
@@ -660,6 +692,7 @@ The filtration takes place by means of suction pump which delivers the treated w
 
     // Page 10 - Commercial
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
     doc.setFontSize(14);
     doc.setFont("helvetica", "bolditalic");
@@ -690,7 +723,7 @@ The filtration takes place by means of suction pump which delivers the treated w
         fontStyle: "bold",
         halign: "center",
       },
-      styles: { fontStyle: "normal", halign: "left", textColor: 0 },
+      styles: { fontStyle: "normal", halign: "center", textColor: 0 },
       didParseCell: function (data) {
         if (data.column.index === 2 || data.column.index === 3) {
           data.cell.styles.halign = "center";
@@ -801,9 +834,10 @@ The filtration takes place by means of suction pump which delivers the treated w
     const pageBottomLimit = pageHeight - footerHeight - 10; // Buffer space before footer
 
     // Function to handle Page Breaks
-    function checkPageBreak(requiredSpace) {
+    async function checkPageBreak(requiredSpace) {
       if (currentY + requiredSpace > pageBottomLimit) {
         doc.addPage();
+        await drawBackground(doc, watermark);
         // add header and footet for the new page
         applyHeaderFooter();
         currentY = headerHeight + 15; // Reset Y position for new page
@@ -812,6 +846,7 @@ The filtration takes place by means of suction pump which delivers the treated w
 
     // 1. Force a new page for the start of this section
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
 
     // --- SPECIAL TERMS (Dynamic Length) ---
@@ -891,6 +926,7 @@ The filtration takes place by means of suction pump which delivers the treated w
 
     // Final Pass: Add Header and Footer to ALL Pages
     const totalPages = doc.getNumberOfPages();
+
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
       try {
@@ -927,7 +963,6 @@ export async function generateBFWordProposal(
       offer_Price: rawOfferPrice,
       authorized_Person,
       treatment_Type,
-      
     } = inputs;
 
     const flowRate = parseFloat(rawFlowRate) || 0;
@@ -954,6 +989,7 @@ export async function generateBFWordProposal(
     } else if (module === "BF220oxy") {
       membraneSurfaceAreaPerMBR = 22;
     }
+    const RasPumpFlow = parseFloat(((flowRate / 24) * 3).toString()).toFixed(2);
 
     const TotalNumberOfModule = Math.ceil(
       (flowRate * 1000) / (flux * workingHr * membraneSurfaceAreaPerMBR),
@@ -1033,6 +1069,9 @@ export async function generateBFWordProposal(
     const formattedDate = formatToDDMMYYYY(date);
 
     setProgress(20, "Loading Image Assets...");
+    const watermarkBuffer = base64ToUint8Array(
+      await loadImage("/Blufox Logo.jpg"),
+    );
     const headerBuffer = base64ToUint8Array(
       await loadImage("/Images for Proposal/header.jpg"),
     );
@@ -1063,11 +1102,24 @@ export async function generateBFWordProposal(
     );
 
     let ModuleSize = "";
-    if (module === "BF10") ModuleSize = "1015 x 680 x 30";
-    else if (module === "BF15") ModuleSize = "1515 x 680 x 30";
-    else if (module === "BF20") ModuleSize = "2015 x 680 x 30";
-    else if (module === "BF25") ModuleSize = "2265 x 680 x 30";
-    else if (module === "BF30") ModuleSize = "2515 x 680 x 30";
+    if (
+      module == "BF100" ||
+      module == "BF100N" ||
+      module == "BF125" ||
+      module == "BF100oxy"
+    ) {
+      ModuleSize = "1000 x 534 x 46";
+    } else if (
+      module == "BF150N" ||
+      module == "BF200" ||
+      module == "BF200oxy"
+    ) {
+      ModuleSize = "1500 x 534 x 46";
+    } else if (module == "BF200N" || module == "BF300") {
+      ModuleSize = "2000 x 534 x 46";
+    } else if (module == "BF220oxy") {
+      ModuleSize = "2055 x 534 x 46";
+    }
 
     setProgress(40, "Building Word Document...");
     const {
@@ -1121,12 +1173,40 @@ export async function generateBFWordProposal(
                     new ImageRun({
                       data: headerBuffer,
                       transformation: { width: 795, height: 90 },
-                       type: "jpg",
+                      type: "jpg",
                     }),
                   ],
                   indent: { left: -1200, right: -1200 },
                   spacing: { before: 0, after: 0 },
                 }),
+
+                new Paragraph({
+                  children: [
+                    new ImageRun({
+                      data: watermarkBuffer,
+                      transformation: {
+                        width: 500,
+                        height: 500,
+                      },
+                      floating: {
+                        horizontalPosition: {
+                          relative: "page",
+                          align: "center",
+                        },
+                        verticalPosition: {
+                          relative: "page",
+                          align: "center",
+                        },
+                        behindDocument: true,
+                        wrap: {
+                          type: TextWrappingType.NONE,
+                        },
+                      },
+                      type: "jpg",
+                    }),
+                  ],
+                }),
+                
               ],
             }),
           },
@@ -1138,7 +1218,7 @@ export async function generateBFWordProposal(
                     new ImageRun({
                       data: footerBuffer,
                       transformation: { width: 795, height: 100 },
-                       type: "jpg",
+                      type: "jpg",
                     }),
                   ],
                   indent: { left: -1200, right: -1200 },
@@ -1169,7 +1249,7 @@ export async function generateBFWordProposal(
                   text: "\t\t\t\t\t\t\tDate: ",
                   size: 24,
                   bold: true,
-                } ),
+                }),
                 new TextRun({ text: formattedDate }),
               ],
             }),
@@ -1196,7 +1276,7 @@ export async function generateBFWordProposal(
                 new ImageRun({
                   data: membraneImgBuffer,
                   transformation: { width: 500, height: 350 },
-                   type: "jpg",
+                  type: "jpg",
                 }),
               ],
               alignment: AlignmentType.CENTER,
@@ -1348,7 +1428,6 @@ export async function generateBFWordProposal(
 
             new Paragraph({ children: [new PageBreak()] }),
 
-            new Paragraph({ text: "" }),
             new Paragraph({
               children: [
                 new TextRun({
@@ -1363,13 +1442,21 @@ export async function generateBFWordProposal(
             new Table({
               width: { size: 100, type: WidthType.PERCENTAGE },
               borders: {
-  top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideHorizontal: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideVertical: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-},
+                top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                insideHorizontal: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+                insideVertical: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+              },
               rows: [
                 new TableRow({
                   children: ["Parameters", "Unit", "Range"].map(
@@ -1448,7 +1535,6 @@ export async function generateBFWordProposal(
               ],
             }),
             new Paragraph({ text: "" }),
-            new Paragraph({ text: "" }),
             new Paragraph({
               children: [
                 new TextRun({
@@ -1469,13 +1555,21 @@ export async function generateBFWordProposal(
             new Table({
               width: { size: 100, type: WidthType.PERCENTAGE },
               borders: {
-  top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideHorizontal: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideVertical: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-},
+                top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                insideHorizontal: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+                insideVertical: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+              },
               rows: [
                 new TableRow({
                   children: ["Items", "Unit"].map(
@@ -1542,6 +1636,9 @@ export async function generateBFWordProposal(
                                   new TextRun({
                                     text: c.toString(),
                                     color: "4b4b4b",
+                                    bold:
+                                      row[0] === "Surface Area (MBR)" &&
+                                      row.indexOf(c) === 1,
                                   }),
                                 ],
                               }),
@@ -1570,8 +1667,8 @@ export async function generateBFWordProposal(
                 new ImageRun({
                   data: pidImgBuffer,
                   transformation: { width: 600, height: 800 },
-                   type: "jpg",
-                } ),
+                  type: "jpg",
+                }),
               ],
               alignment: AlignmentType.CENTER,
             }),
@@ -1593,7 +1690,7 @@ export async function generateBFWordProposal(
                 new ImageRun({
                   data: gaImgBuffer,
                   transformation: { width: 600, height: 800 },
-                   type: "jpg",
+                  type: "jpg",
                 }),
               ],
               alignment: AlignmentType.CENTER,
@@ -1614,13 +1711,21 @@ export async function generateBFWordProposal(
             new Table({
               width: { size: 100, type: WidthType.PERCENTAGE },
               borders: {
-  top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideHorizontal: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideVertical: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-},
+                top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                insideHorizontal: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+                insideVertical: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+              },
               rows: [
                 new TableRow({
                   children: ["Parameters", "Unit", "Range"].map(
@@ -1702,11 +1807,7 @@ export async function generateBFWordProposal(
                     "m3/hr",
                     `${RequiredBackwashFlowRate}`,
                   ],
-                  [
-                    "MBR Tank Volume Required",
-                    "m3",
-                    `${TotalMembraneTankVolume}`,
-                  ],
+                  ["RAS Pump Flow ", "m3", `${RasPumpFlow}`],
                 ].map(
                   (row, index) =>
                     new TableRow({
@@ -1765,13 +1866,21 @@ export async function generateBFWordProposal(
             new Table({
               width: { size: 100, type: WidthType.PERCENTAGE },
               borders: {
-  top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideHorizontal: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideVertical: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-},
+                top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                insideHorizontal: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+                insideVertical: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+              },
               rows: [
                 new TableRow({
                   children: [
@@ -1866,6 +1975,7 @@ export async function generateBFWordProposal(
                                     color: "4b4b4b",
                                   }),
                                 ],
+                                alignment: AlignmentType.LEFT,
                               }),
                             ],
                           }),
@@ -1896,19 +2006,21 @@ export async function generateBFWordProposal(
               " TDS of treated water <3000 ppm. Chlorides <1500 ppm. Sulphates <700 ppm.",
               " Oil & Grease must not exceed 10 mg/L (emulsified) with no free oil.",
               " Adequate alkalinity must be maintained for biological performance; chemical dosing may be required.",
-            ].map((note, i) => new Paragraph({
-              children: [
-                new TextRun({
-                  text: `${i+1}.  ${note}` 
-                })  
-              ],
-              spacing: { 
-        after: 50,
-    },
-            }
-          )),
+            ].map(
+              (note, i) =>
+                new Paragraph({
+                  children: [
+                    new TextRun({
+                      text: `${i + 1}.  ${note}`,
+                    }),
+                  ],
+                  spacing: {
+                    after: 50,
+                  },
+                }),
+            ),
 
-            new Paragraph({text: ""}),
+            new Paragraph({ text: "" }),
             new Paragraph({
               children: [
                 new TextRun({
@@ -1925,7 +2037,7 @@ export async function generateBFWordProposal(
                 new ImageRun({
                   data: cycleImgBuffer,
                   transformation: { width: 600, height: 150 },
-                   type: "jpg",
+                  type: "jpg",
                 }),
               ],
               alignment: AlignmentType.CENTER,
@@ -1945,13 +2057,21 @@ export async function generateBFWordProposal(
             new Table({
               width: { size: 100, type: WidthType.PERCENTAGE },
               borders: {
-  top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideHorizontal: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideVertical: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-},
+                top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                insideHorizontal: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+                insideVertical: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+              },
               rows: [
                 new TableRow({
                   children: [
@@ -2043,13 +2163,21 @@ export async function generateBFWordProposal(
             new Table({
               width: { size: 100, type: WidthType.PERCENTAGE },
               borders: {
-  top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideHorizontal: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideVertical: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-},
+                top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                insideHorizontal: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+                insideVertical: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+              },
               rows: [
                 new TableRow({
                   children: ["No.", "Item", "Qty.", "Total Price (Rs.)"].map(
@@ -2081,7 +2209,12 @@ export async function generateBFWordProposal(
                         left: 200,
                         right: 200,
                       },
-                      children: [new Paragraph({ text: "1." })],
+                      children: [
+                        new Paragraph({
+                          text: "1.",
+                          alignment: AlignmentType.CENTER,
+                        }),
+                      ],
                     }),
                     new TableCell({
                       verticalAlign: VerticalAlign.CENTER,
@@ -2184,10 +2317,14 @@ export async function generateBFWordProposal(
               ],
             }),
             new Paragraph({
-              text: "• Supply of Membranes Module / only membranes.", indent :{left: 200}
+              text: "• Supply of Membranes Module / only membranes.",
+              indent: { left: 200 },
             }),
-            new Paragraph({ text: "• Supply P&ID", indent :{left: 200} }),
-            new Paragraph({ text: "• Operation Manual", indent :{left: 200} }),
+            new Paragraph({ text: "• Supply P&ID", indent: { left: 200 } }),
+            new Paragraph({
+              text: "• Operation Manual",
+              indent: { left: 200 },
+            }),
             new Paragraph({ text: "" }),
             new Paragraph({
               children: [
@@ -2201,10 +2338,17 @@ export async function generateBFWordProposal(
               ],
             }),
             new Paragraph({
-              text: "• Pre-treatment, Biological, Post Treatment", indent :{left: 200}
+              text: "• Pre-treatment, Biological, Post Treatment",
+              indent: { left: 200 },
             }),
-            new Paragraph({ text: "• Control Panel & Instruments.", indent :{left: 200} }),
-            new Paragraph({ text: "• Pumps, Blowers, Lifting system etc.", indent :{left: 200} }),
+            new Paragraph({
+              text: "• Control Panel & Instruments.",
+              indent: { left: 200 },
+            }),
+            new Paragraph({
+              text: "• Pumps, Blowers, Lifting system etc.",
+              indent: { left: 200 },
+            }),
             new Paragraph({ text: "" }),
             new Paragraph({
               children: [
@@ -2228,7 +2372,7 @@ export async function generateBFWordProposal(
               "8) Membrane Warranty will be one year against manufacturing defect only.",
               "9) Client has to submit the feed water data, Process flow diagram, P&ID, Programming cycle design before commissioning of the plant, if client wants to understand the CEB / CIP process, supplier can provide video training support to client.",
               "10) Any other terms and conditions will be as per Blufox standard terms and conditions.",
-            ].map((t) => new Paragraph({ text: t, indent :{left: 200} })),
+            ].map((t) => new Paragraph({ text: t, indent: { left: 200 } })),
             new Paragraph({ text: "" }),
             ...(special_Terms
               ? [
@@ -2279,27 +2423,26 @@ export async function generateBFWordProposal(
                 }),
               ],
             }),
-new Paragraph({
+            new Paragraph({
               children: [
                 new ImageRun({
                   data: blufoxExtraImg1Buffer,
                   transformation: { width: 200, height: 200 },
-                   type: "jpg",
+                  type: "jpg",
                 }),
                 new ImageRun({
                   data: blufoxExtraImg2Buffer,
                   transformation: { width: 200, height: 200 },
-                   type: "jpg",
+                  type: "jpg",
                 }),
                 new ImageRun({
                   data: blufoxExtraImg3Buffer,
                   transformation: { width: 200, height: 200 },
-                   type: "jpg",
+                  type: "jpg",
                 }),
               ],
               alignment: AlignmentType.CENTER,
             }),
-            
           ],
         },
       ],

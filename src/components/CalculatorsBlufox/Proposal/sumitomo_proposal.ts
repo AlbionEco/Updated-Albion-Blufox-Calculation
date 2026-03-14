@@ -3,6 +3,7 @@ import autoTable from "jspdf-autotable";
 import * as docx from "docx";
 import { saveAs } from "file-saver";
 import { loadImage, base64ToUint8Array, formatToDDMMYYYY } from "./utils";
+import { TextWrappingType } from "docx";
 
 // Extend jsPDF type for autotable
 declare module "jspdf" {
@@ -12,6 +13,19 @@ declare module "jspdf" {
       finalY: number;
     };
   }
+}
+
+async function drawBackground(doc: any, watermark: any) {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+
+  const imgWidth = 130;
+  const imgHeight = 130;
+
+  const x = (pageWidth - imgWidth) / 2;
+  const y = (pageHeight - imgHeight) / 2;
+
+  doc.addImage(watermark, "JPG", x, y, imgWidth, imgHeight);
 }
 
 export async function generateSumitomoProposal(
@@ -100,6 +114,8 @@ export async function generateSumitomoProposal(
 
     setProgress(30, "Initializing PDF...");
     const doc = new jsPDF({ compress: true, unit: "mm", format: "a4" });
+    const watermark = await loadImage("/Blufox Logo.jpg");
+    await drawBackground(doc, watermark);
     const pageWidth = doc.internal.pageSize.width;
     const pageHeight = doc.internal.pageSize.height;
     const headerHeight = 25;
@@ -201,6 +217,7 @@ export async function generateSumitomoProposal(
 
     // Page 3 - More Features & Process
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
     doc.addImage(membraneImg2, "JPEG", 20, currentY + 5, 170, 80);
     currentY += 100;
@@ -228,6 +245,7 @@ export async function generateSumitomoProposal(
     });
 
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
     doc.setFontSize(14);
     doc.setFont("helvetica", "bolditalic");
@@ -271,6 +289,7 @@ export async function generateSumitomoProposal(
     });
 
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
     doc.setFontSize(14);
     doc.setFont("helvetica", "bolditalic");
@@ -449,6 +468,7 @@ export async function generateSumitomoProposal(
 
     // Offer Parameters
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
     doc.setFontSize(14);
     doc.setFont("helvetica", "bolditalic");
@@ -537,6 +557,7 @@ export async function generateSumitomoProposal(
     );
 
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
     doc.setFontSize(14);
     doc.setFont("helvetica", "bolditalic");
@@ -546,6 +567,7 @@ export async function generateSumitomoProposal(
 
     // Commercial
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
     doc.setFontSize(14);
     doc.setFont("helvetica", "bolditalic");
@@ -688,9 +710,10 @@ with SS304 Skid(Frame)`,
     const pageBottomLimit = pageHeight - footerHeight - 10; // Buffer space before footer
 
     // Function to handle Page Breaks
-    function checkPageBreak(requiredSpace) {
+    async function checkPageBreak(requiredSpace) {
       if (currentY + requiredSpace > pageBottomLimit) {
         doc.addPage();
+        await drawBackground(doc, watermark);
         // add header and footet for the new page
         applyHeaderFooter();
         currentY = headerHeight + 15; // Reset Y position for new page
@@ -699,6 +722,7 @@ with SS304 Skid(Frame)`,
 
     // 1. Force a new page for the start of this section
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
 
     // --- SPECIAL TERMS (Dynamic Length) ---
@@ -836,6 +860,9 @@ export async function generateSumitomoWordProposal(
     const formattedDate = formatToDDMMYYYY(date);
 
     setProgress(20, "Loading Image Assets...");
+    const watermarkBuffer = base64ToUint8Array(
+      await loadImage("/Blufox Logo.jpg"),
+    );
     const headerBuffer = base64ToUint8Array(
       await loadImage("/Images for Proposal/header.jpg"),
     );
@@ -910,6 +937,32 @@ export async function generateSumitomoWordProposal(
                   ],
                   indent: { left: -1200, right: -1200 },
                   spacing: { before: 0, after: 0 },
+                }),
+                new Paragraph({
+                  children: [
+                    new ImageRun({
+                      data: watermarkBuffer,
+                      transformation: {
+                        width: 500,
+                        height: 500,
+                      },
+                      floating: {
+                        horizontalPosition: {
+                          relative: "page",
+                          align: "center",
+                        },
+                        verticalPosition: {
+                          relative: "page",
+                          align: "center",
+                        },
+                        behindDocument: true,
+                        wrap: {
+                          type: TextWrappingType.NONE,
+                        },
+                      },
+                      type: "jpg",
+                    }),
+                  ],
                 }),
               ],
             }),
@@ -1109,7 +1162,7 @@ export async function generateSumitomoWordProposal(
               ],
             }),
             new Paragraph({ children: [new PageBreak()] }),
-            
+
             new Paragraph({ text: "" }),
             new Paragraph({
               children: [
@@ -1184,7 +1237,7 @@ export async function generateSumitomoWordProposal(
                   data: cycleImgBuffer,
                   transformation: { width: 600, height: 150 },
                   type: "jpg",
-            }),
+                }),
               ],
               alignment: AlignmentType.CENTER,
             }),

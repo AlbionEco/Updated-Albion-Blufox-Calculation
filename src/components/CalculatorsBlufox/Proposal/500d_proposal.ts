@@ -3,6 +3,7 @@ import autoTable from "jspdf-autotable";
 import * as docx from "docx";
 import { saveAs } from "file-saver";
 import { loadImage, base64ToUint8Array, formatToDDMMYYYY } from "./utils";
+import { TextWrappingType } from "docx";
 
 // Extend jsPDF type for autotable
 declare module "jspdf" {
@@ -13,6 +14,19 @@ declare module "jspdf" {
     };
   }
 }
+async function drawBackground(doc: any, watermark: any) {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+
+  const imgWidth = 130;
+  const imgHeight = 130;
+
+  const x = (pageWidth - imgWidth) / 2;
+  const y = (pageHeight - imgHeight) / 2;
+
+  doc.addImage(watermark, "JPG", x, y, imgWidth, imgHeight);
+}
+
 export async function generate500DProposal(
   inputs: any,
   setProgress: (percent: number, message: string) => void,
@@ -78,6 +92,8 @@ export async function generate500DProposal(
 
     setProgress(30, "Initializing PDF...");
     const doc = new jsPDF({ compress: true, unit: "mm", format: "a4" });
+    const watermark = await loadImage("/Blufox Logo.jpg");
+    await drawBackground(doc, watermark);
     const pageWidth = doc.internal.pageSize.width;
     const pageHeight = doc.internal.pageSize.height;
     const headerHeight = 25;
@@ -153,6 +169,7 @@ export async function generate500DProposal(
     // Page 2 - Product Features
     setProgress(50, "Creating Product Features...");
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
     doc.setFontSize(14);
     doc.setFont("helvetica", "bolditalic");
@@ -207,6 +224,7 @@ export async function generate500DProposal(
 
     // Page 3 - More Features & Process
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
     addBullet(
       "Reproduction of Nitro bacteria:",
@@ -269,6 +287,7 @@ export async function generate500DProposal(
 
     // Page 4 - Operating Conditions & Specs
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
@@ -309,6 +328,14 @@ export async function generate500DProposal(
       },
       alternateRowStyles: { fillColor: [240, 240, 240] },
       bodyStyles: { fillColor: [255, 255, 255], textColor: "#4b4b4b" },
+      didParseCell: function (data) {
+        const rowLabel = data.row.cells[0].raw; // Gets the label from the first column
+
+        // If it's the specific row AND it's the second column (index 1)
+        if (rowLabel === "Surface Area (MBR)" && data.column.index === 1) {
+          data.cell.styles.fontStyle = "bold";
+        }
+      },
     });
     currentY = doc.lastAutoTable.finalY + 15;
     doc.setFontSize(11);
@@ -327,6 +354,7 @@ export async function generate500DProposal(
 
     //new page
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
 
     doc.setFontSize(14);
@@ -339,10 +367,11 @@ export async function generate500DProposal(
 
     //new page
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 10;
     doc.addImage(membraneImg3, "JPEG", 55, currentY, 90, 90);
 
-  currentY += 100;
+    currentY += 100;
 
     doc.setFontSize(14);
     doc.setFont("helvetica", "bolditalic");
@@ -374,7 +403,7 @@ export async function generate500DProposal(
         fontStyle: "bold",
         halign: "center",
       },
-      styles: { fontStyle: "normal", halign: "left", textColor: 0 },
+      styles: { fontStyle: "normal", halign: "center", textColor: 0 },
       didParseCell: function (data) {
         if (data.column.index === 2 || data.column.index === 3) {
           data.cell.styles.halign = "center";
@@ -398,13 +427,13 @@ export async function generate500DProposal(
     doc.setFont("helvetica", "normal");
     doc.setTextColor(0);
     const termsConditions = [
-       "1. GST 18% extra.",
-            "2. Freight will be charges extra.",
-            "3. Installation under client scope.",
-            "4. Prices Validity 30 days (USD fluctuation).",
-            "5. Delivery of Goods discussion at the time of order.",
-            "6. Standard warranty one year from the date of supply against manufacturing defect."
-         ];
+      "1. GST 18% extra.",
+      "2. Freight will be charges extra.",
+      "3. Installation under client scope.",
+      "4. Prices Validity 30 days (USD fluctuation).",
+      "5. Delivery of Goods discussion at the time of order.",
+      "6. Standard warranty one year from the date of supply against manufacturing defect.",
+    ];
 
     termsConditions.forEach((term) => {
       // 1. Split text to know exactly how many lines it occupies
@@ -434,7 +463,6 @@ export async function generate500DProposal(
       { maxWidth: 180, align: "justify" },
     );
 
-
     // Page 11 - Authorization
     // --- HELPER CONFIGURATION ---
     const contentStartX = 25;
@@ -443,9 +471,10 @@ export async function generate500DProposal(
     const pageBottomLimit = pageHeight - footerHeight - 10; // Buffer space before footer
 
     // Function to handle Page Breaks
-    function checkPageBreak(requiredSpace) {
+    async function checkPageBreak(requiredSpace) {
       if (currentY + requiredSpace > pageBottomLimit) {
         doc.addPage();
+        await drawBackground(doc, watermark);
         // add header and footet for the new page
         applyHeaderFooter();
         currentY = headerHeight + 15; // Reset Y position for new page
@@ -454,64 +483,69 @@ export async function generate500DProposal(
 
     // 1. Force a new page for the start of this section
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
 
     doc.setFontSize(11);
-        doc.setFont("helvetica", "bolditalic");
-        doc.setTextColor(0, 0, 139);
-        doc.text('Warehouse Charges: ', 25, currentY);
-        currentY += 7;
-        //Content 2 bullet points justified
-        doc.setFontSize(11);
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(0);
-        const warehouseText = [
-            "1. Charges will be 0.5% on Plant Value, if not picked up as per the dispatch schedule agreed at the time of order finalization. ",
-            "2. If applicable, need to be clear separately before the dispatch of material"
-        ];
-        warehouseText.forEach(text => {
-            let lines = doc.splitTextToSize(text, 165);
-            let blockHeight = lines.length * 5;
-            doc.text(lines, 30, currentY);
-            currentY += blockHeight + 2;
-        });
-        currentY += 5;
+    doc.setFont("helvetica", "bolditalic");
+    doc.setTextColor(0, 0, 139);
+    doc.text("Warehouse Charges: ", 25, currentY);
+    currentY += 7;
+    //Content 2 bullet points justified
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(0);
+    const warehouseText = [
+      "1. Charges will be 0.5% on Plant Value, if not picked up as per the dispatch schedule agreed at the time of order finalization. ",
+      "2. If applicable, need to be clear separately before the dispatch of material",
+    ];
+    warehouseText.forEach((text) => {
+      let lines = doc.splitTextToSize(text, 165);
+      let blockHeight = lines.length * 5;
+      doc.text(lines, 30, currentY);
+      currentY += blockHeight + 2;
+    });
+    currentY += 5;
 
-        //Heading
-        doc.setFontSize(11);
-        doc.setFont("helvetica", "bolditalic");
-        doc.setTextColor(0, 0, 139);
-        doc.text('Freight & Transportation: ', 25, currentY);
-        currentY += 7;
-        //Content 2 bullet points justified
-        doc.setFontSize(11);
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(0);
-        const freightText = [
-            "• Loading / Unloading charges must be paid by Client to the transporter directly, with duly signed copy of authorized signatory on ‘packing list’. ",
-            "• Checking & verifying all the materials, as mentioned in packing list is a due responsibility of client. Any misplacement or damaged equipment afterwards will not be acceptable. ",
-            "• Any damage during the unloading of materials or shifting of equipment’s to the particular place will not be entertained & the whole and soul responsibility will be of client. ",
-            "• Any unskilled labour and/or any unloading equipment required during the unloading/ shifting of materials at site will be the responsibility of concerned party/person present at site only."
-        ];
-        freightText.forEach(text => {
-            let lines = doc.splitTextToSize(text, 165);
-            let blockHeight = lines.length * 5;
-            doc.text(lines, 30, currentY);
-            currentY += blockHeight + 2;
-        });
-        currentY += 5;
+    //Heading
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bolditalic");
+    doc.setTextColor(0, 0, 139);
+    doc.text("Freight & Transportation: ", 25, currentY);
+    currentY += 7;
+    //Content 2 bullet points justified
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(0);
+    const freightText = [
+      "• Loading / Unloading charges must be paid by Client to the transporter directly, with duly signed copy of authorized signatory on ‘packing list’. ",
+      "• Checking & verifying all the materials, as mentioned in packing list is a due responsibility of client. Any misplacement or damaged equipment afterwards will not be acceptable. ",
+      "• Any damage during the unloading of materials or shifting of equipment’s to the particular place will not be entertained & the whole and soul responsibility will be of client. ",
+      "• Any unskilled labour and/or any unloading equipment required during the unloading/ shifting of materials at site will be the responsibility of concerned party/person present at site only.",
+    ];
+    freightText.forEach((text) => {
+      let lines = doc.splitTextToSize(text, 165);
+      let blockHeight = lines.length * 5;
+      doc.text(lines, 30, currentY);
+      currentY += blockHeight + 2;
+    });
+    currentY += 5;
 
- //Delivery
-        doc.setFontSize(11);
-        doc.setFont("helvetica", "bolditalic");
-        doc.setTextColor(0, 0, 139);
-        doc.text('Delivery: ', 25, currentY);
-        doc.setFontSize(11);
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(0);
-        doc.text("4-8 weeks from date of Purchase order with advance payment Subject to Surat Jurisdiction only", 42, currentY, { maxWidth: 145, align: "justify" });
-        currentY += 20;
-
+    //Delivery
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bolditalic");
+    doc.setTextColor(0, 0, 139);
+    doc.text("Delivery: ", 25, currentY);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(0);
+    doc.text(
+      "4-8 weeks from date of Purchase order with advance payment Subject to Surat Jurisdiction only",
+      42,
+      currentY,
+      { maxWidth: 145, align: "justify" },
+    );
+    currentY += 20;
 
     // --- SPECIAL TERMS (Dynamic Length) ---
     if (special_Terms && special_Terms.trim() !== "") {
@@ -637,10 +671,12 @@ export async function generate500DWordProposal(
     }
     RequiredtotalAirFlowRate = parseFloat(RequiredtotalAirFlowRate.toFixed(2));
 
-
     const formattedDate = formatToDDMMYYYY(date);
 
     setProgress(20, "Loading Image Assets...");
+    const watermarkBuffer = base64ToUint8Array(
+      await loadImage("/Blufox Logo.jpg"),
+    );
     const headerBuffer = base64ToUint8Array(
       await loadImage("/Images for Proposal/header.jpg"),
     );
@@ -656,7 +692,6 @@ export async function generate500DWordProposal(
     );
     const membraneImg2 = await loadImage("/Images for Proposal/500D 2.jpg");
     const membraneImg3 = await loadImage("/Images for Proposal/500D 3.jpg");
-
 
     setProgress(40, "Building Word Document...");
     const {
@@ -711,10 +746,36 @@ export async function generate500DWordProposal(
                       data: headerBuffer,
                       transformation: { width: 795, height: 90 },
                       type: "jpg",
-                    } ),
+                    }),
                   ],
                   indent: { left: -1200, right: -1200 },
                   spacing: { before: 0, after: 0 },
+                }),
+                new Paragraph({
+                  children: [
+                    new ImageRun({
+                      data: watermarkBuffer,
+                      transformation: {
+                        width: 500,
+                        height: 500,
+                      },
+                      floating: {
+                        horizontalPosition: {
+                          relative: "page",
+                          align: "center",
+                        },
+                        verticalPosition: {
+                          relative: "page",
+                          align: "center",
+                        },
+                        behindDocument: true,
+                        wrap: {
+                          type: TextWrappingType.NONE,
+                        },
+                      },
+                      type: "jpg",
+                    }),
+                  ],
                 }),
               ],
             }),
@@ -727,10 +788,10 @@ export async function generate500DWordProposal(
                     new ImageRun({
                       data: footerBuffer,
                       transformation: { width: 795, height: 100 },
-                       type: "jpg",
+                      type: "jpg",
                     }),
                   ],
-                 indent: { left: -1200, right: -1200 },
+                  indent: { left: -1200, right: -1200 },
                 }),
               ],
             }),
@@ -773,8 +834,8 @@ export async function generate500DWordProposal(
               children: [
                 new TextRun({ text: "Proposal: ", bold: true, size: 24 }),
                 new TextRun({
-                  text: `Techno Commercial offer for BLUFOX® BF500D 31.6m2 MBR Membranes`, 
-                  size: 24
+                  text: `Techno Commercial offer for BLUFOX® BF500D 31.6m2 MBR Membranes`,
+                  size: 24,
                 }),
               ],
             }),
@@ -785,7 +846,7 @@ export async function generate500DWordProposal(
                 new ImageRun({
                   data: membraneImgBuffer,
                   transformation: { width: 350, height: 350 },
-                   type: "jpg",
+                  type: "jpg",
                 }),
               ],
               alignment: AlignmentType.CENTER,
@@ -912,7 +973,7 @@ export async function generate500DWordProposal(
                 new Paragraph({ text: "" }),
               ])
               .flat(),
-           new Paragraph({ text: "" }),
+            new Paragraph({ text: "" }),
             new Paragraph({
               children: [
                 new TextRun({
@@ -929,7 +990,7 @@ export async function generate500DWordProposal(
                 new ImageRun({
                   data: cycleImgBuffer,
                   transformation: { width: 600, height: 150 },
-                   type: "jpg",
+                  type: "jpg",
                 }),
               ],
               alignment: AlignmentType.CENTER,
@@ -949,13 +1010,21 @@ export async function generate500DWordProposal(
             new Table({
               width: { size: 100, type: WidthType.PERCENTAGE },
               borders: {
-  top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideHorizontal: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideVertical: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-},
+                top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                insideHorizontal: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+                insideVertical: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+              },
               rows: [
                 new TableRow({
                   children: [
@@ -1035,20 +1104,31 @@ export async function generate500DWordProposal(
 
             new Paragraph({ text: "" }),
             new Paragraph({
-  children: [
-    new TextRun({text: "Note: ", bold: true}),
-    new TextRun({ text: "Raw water has been biologically treated and screened with 2 mm treatment." })
-  ]}),
+              children: [
+                new TextRun({ text: "Note: ", bold: true }),
+                new TextRun({
+                  text: "Raw water has been biologically treated and screened with 2 mm treatment.",
+                }),
+              ],
+            }),
             new Table({
               width: { size: 100, type: WidthType.PERCENTAGE },
               borders: {
-  top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideHorizontal: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideVertical: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-},
+                top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                insideHorizontal: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+                insideVertical: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+              },
               rows: [
                 new TableRow({
                   children: ["Parameters", "Unit"].map(
@@ -1077,19 +1157,22 @@ export async function generate500DWordProposal(
                   ),
                 }),
                 ...[
-                 ['Material of Fiber ', 'Reinforced PVDF with PET Layer Support '],
-                ['Element Header ', 'ABS resin (Heavy Duty) '],
-                ['Pore size', '0.04 Micron '],
-                ['Fiber Size (OD/ID) ', '1.9mm / 0.8mm '],
-                ['Surface Area ', '31.6m2'],
-                ['Operation Pressure', '-2.95 to -17.71 inHg'],
-                ['Backwash Pressure', 'Max 0.15 MPa'],
-                ['Operating Temp', '10 - 40 Degree '],
-                ['Backwash Time', '30 ~ 120 sec.'],
-                ['Turbidity outlet', '<3-1 NTU '],
-                ['NaClO tolerance', '5000ppm'],
-                ['Element Dimension', '2198 x 844 x 49(mm)']
-             ].map(
+                  [
+                    "Material of Fiber ",
+                    "Reinforced PVDF with PET Layer Support ",
+                  ],
+                  ["Element Header ", "ABS resin (Heavy Duty) "],
+                  ["Pore size", "0.04 Micron "],
+                  ["Fiber Size (OD/ID) ", "1.9mm / 0.8mm "],
+                  ["Surface Area ", "31.6m2"],
+                  ["Operation Pressure", "-2.95 to -17.71 inHg"],
+                  ["Backwash Pressure", "Max 0.15 MPa"],
+                  ["Operating Temp", "10 - 40 Degree "],
+                  ["Backwash Time", "30 ~ 120 sec."],
+                  ["Turbidity outlet", "<3-1 NTU "],
+                  ["NaClO tolerance", "5000ppm"],
+                  ["Element Dimension", "2198 x 844 x 49(mm)"],
+                ].map(
                   (row, index) =>
                     new TableRow({
                       children: row.map(
@@ -1111,6 +1194,9 @@ export async function generate500DWordProposal(
                                   new TextRun({
                                     text: c.toString(),
                                     color: "4b4b4b",
+                                    bold:
+                                      row[0] === "Surface Area (MBR)" &&
+                                      row.indexOf(c) === 1,
                                   }),
                                 ],
                               }),
@@ -1122,11 +1208,17 @@ export async function generate500DWordProposal(
               ],
             }),
             new Paragraph({ text: "" }),
-            new Paragraph({ children: [new TextRun({ text: "Work Method Process", bold: true })] }),
-            new Paragraph({ text: "MBR system work in base of “Continuous Blower, Intermittent Permeate” with 7/8mins Work and 2mins Stop. Backwash per 3-4hrs with 2mins, CEB per 7day with 90mins" }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: "Work Method Process", bold: true }),
+              ],
+            }),
+            new Paragraph({
+              text: "MBR system work in base of “Continuous Blower, Intermittent Permeate” with 7/8mins Work and 2mins Stop. Backwash per 3-4hrs with 2mins, CEB per 7day with 90mins",
+            }),
             new Paragraph({ children: [new PageBreak()] }),
 
-             new Paragraph({ text: "" }),
+            new Paragraph({ text: "" }),
             new Paragraph({
               children: [
                 new TextRun({
@@ -1139,28 +1231,28 @@ export async function generate500DWordProposal(
               ],
             }),
             new Paragraph({ text: "" }),
-new Paragraph({
-  children: [
-    new ImageRun({ 
-      data: membraneImg2,
-      transformation: { width: 530, height: 750 },
-       type: "jpg",
-    }),
-  ],
-}),
+            new Paragraph({
+              children: [
+                new ImageRun({
+                  data: membraneImg2,
+                  transformation: { width: 530, height: 750 },
+                  type: "jpg",
+                }),
+              ],
+            }),
 
-new Paragraph({ children: [new PageBreak()] }),
+            new Paragraph({ children: [new PageBreak()] }),
 
-new Paragraph({
-  children: [
-    new ImageRun({ 
-      data: membraneImg3,
-      transformation: { width: 300, height: 300 },
-       type: "jpg",
-    }),
-  ],
-   alignment: AlignmentType.CENTER,
-}),
+            new Paragraph({
+              children: [
+                new ImageRun({
+                  data: membraneImg3,
+                  transformation: { width: 300, height: 300 },
+                  type: "jpg",
+                }),
+              ],
+              alignment: AlignmentType.CENTER,
+            }),
             new Paragraph({ text: "" }),
             new Paragraph({ text: "" }),
             new Paragraph({
@@ -1177,13 +1269,21 @@ new Paragraph({
             new Table({
               width: { size: 100, type: WidthType.PERCENTAGE },
               borders: {
-  top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideHorizontal: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideVertical: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-},
+                top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                insideHorizontal: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+                insideVertical: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+              },
               rows: [
                 new TableRow({
                   children: ["No.", "Item", "Qty.", "Total Price (Rs.)"].map(
@@ -1215,7 +1315,12 @@ new Paragraph({
                         left: 200,
                         right: 200,
                       },
-                      children: [new Paragraph({ text: "1." })],
+                      children: [
+                        new Paragraph({
+                          text: "1.",
+                          alignment: AlignmentType.CENTER,
+                        }),
+                      ],
                     }),
                     new TableCell({
                       verticalAlign: VerticalAlign.CENTER,
@@ -1307,44 +1412,127 @@ new Paragraph({
             }),
             new Paragraph({ text: "" }),
             // line height exactly 400 TWIPs (~14pt) for spacing
-            new Paragraph({ children: [new TextRun({ text: "Terms & Conditions:", bold: true, italics: true, color: "00008B" })], spacing: { line: 380 } }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "Terms & Conditions:",
+                  bold: true,
+                  italics: true,
+                  color: "00008B",
+                }),
+              ],
+              spacing: { line: 380 },
+            }),
             new Paragraph({ text: "1. GST 18% extra.", indent: { left: 350 } }),
-            new Paragraph({ text: "2. Freight will be charges extra.", indent: { left: 350 } }),
-            new Paragraph({ text: "3. Installation under client scope.", indent: { left: 350 } }),
-            new Paragraph({ text: "4. Prices Validity 30 days (USD fluctuation).", indent: { left: 350 } }),
-            new Paragraph({ text: "5. Delivery of Goods discussion at the time of order.", indent: { left: 350 } }),
-            new Paragraph({ text: "6. Standard warranty one year from the date of supply against manufacturing defect.", indent: { left: 350 } }),
+            new Paragraph({
+              text: "2. Freight will be charges extra.",
+              indent: { left: 350 },
+            }),
+            new Paragraph({
+              text: "3. Installation under client scope.",
+              indent: { left: 350 },
+            }),
+            new Paragraph({
+              text: "4. Prices Validity 30 days (USD fluctuation).",
+              indent: { left: 350 },
+            }),
+            new Paragraph({
+              text: "5. Delivery of Goods discussion at the time of order.",
+              indent: { left: 350 },
+            }),
+            new Paragraph({
+              text: "6. Standard warranty one year from the date of supply against manufacturing defect.",
+              indent: { left: 350 },
+            }),
             new Paragraph({ text: "" }),
 
-new Paragraph({ text: "" }),
+            new Paragraph({ text: "" }),
             // line height exactly 400 TWIPs (~14pt) for spacing
-            new Paragraph({ children: [new TextRun({ text: "Payment Terms & Conditions:", bold: true, italics: true, color: "00008B" })], spacing: { line: 380 } }),
-            new Paragraph({ text: "100% advance along with purchase order along with GST." }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "Payment Terms & Conditions:",
+                  bold: true,
+                  italics: true,
+                  color: "00008B",
+                }),
+              ],
+              spacing: { line: 380 },
+            }),
+            new Paragraph({
+              text: "100% advance along with purchase order along with GST.",
+            }),
 
             new Paragraph({ children: [new PageBreak()] }),
- new Paragraph({ children: [new TextRun({ text: "Warehouse Charges:", bold: true, italics: true, color: "00008B" })], spacing: { line: 380 } }),
-            new Paragraph({ text: "1. Charges will be 0.5% on Plant Value, if not picked up as per the dispatch schedule agreed at the time of order finalization.", indent: { left: 350 } }),
-            new Paragraph({ text: "2. If applicable, need to be clear separately before the dispatch of material", indent: { left: 350 } }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "Warehouse Charges:",
+                  bold: true,
+                  italics: true,
+                  color: "00008B",
+                }),
+              ],
+              spacing: { line: 380 },
+            }),
+            new Paragraph({
+              text: "1. Charges will be 0.5% on Plant Value, if not picked up as per the dispatch schedule agreed at the time of order finalization.",
+              indent: { left: 350 },
+            }),
+            new Paragraph({
+              text: "2. If applicable, need to be clear separately before the dispatch of material",
+              indent: { left: 350 },
+            }),
             new Paragraph({ text: "" }),
 
             //Freight & Transportation
-            new Paragraph({ children: [new TextRun({ text: "Freight & Transportation:", bold: true, italics: true, color: "00008B" })], spacing: { line: 380 } }),
-            new Paragraph({ text: "• Loading / Unloading charges must be paid by Client to the transporter directly, with duly signed copy of authorized signatory on ‘packing list’.", indent: { left: 350 } }),
-            new Paragraph({ text: "• Checking & verifying all the materials, as mentioned in packing list is a due responsibility of client. Any misplacement or damaged equipment afterwards will not be acceptable.", indent: { left: 350 } }),
-            new Paragraph({ text: "• Any damage during the unloading of materials or shifting of equipment’s to the particular place will not be entertained & the whole and soul responsibility will be of client.", indent: { left: 350 } }),
-            new Paragraph({ text: "• Any unskilled labour and/or any unloading equipment required during the unloading/ shifting of materials at site will be the responsibility of concerned party/person present at site only.", indent: { left: 350 } }),
-new Paragraph({ text: "" }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "Freight & Transportation:",
+                  bold: true,
+                  italics: true,
+                  color: "00008B",
+                }),
+              ],
+              spacing: { line: 380 },
+            }),
+            new Paragraph({
+              text: "• Loading / Unloading charges must be paid by Client to the transporter directly, with duly signed copy of authorized signatory on ‘packing list’.",
+              indent: { left: 350 },
+            }),
+            new Paragraph({
+              text: "• Checking & verifying all the materials, as mentioned in packing list is a due responsibility of client. Any misplacement or damaged equipment afterwards will not be acceptable.",
+              indent: { left: 350 },
+            }),
+            new Paragraph({
+              text: "• Any damage during the unloading of materials or shifting of equipment’s to the particular place will not be entertained & the whole and soul responsibility will be of client.",
+              indent: { left: 350 },
+            }),
+            new Paragraph({
+              text: "• Any unskilled labour and/or any unloading equipment required during the unloading/ shifting of materials at site will be the responsibility of concerned party/person present at site only.",
+              indent: { left: 350 },
+            }),
+            new Paragraph({ text: "" }),
             //Delivery Time
             new Paragraph({
-                children: [
-                    new TextRun({ text: "Delivery: ", bold: true, italics: true, color: "00008B"}),
-                    new TextRun({ text: "4–8 weeks from the date of Purchase Order with advance payment. Subject to Surat jurisdiction only.", bold: false, italics: false,color: "000000", 
-                    }), 
-                ],
-                spacing: { line: 380 },
-                alignment: AlignmentType.JUSTIFIED
+              children: [
+                new TextRun({
+                  text: "Delivery: ",
+                  bold: true,
+                  italics: true,
+                  color: "00008B",
+                }),
+                new TextRun({
+                  text: "4–8 weeks from the date of Purchase Order with advance payment. Subject to Surat jurisdiction only.",
+                  bold: false,
+                  italics: false,
+                  color: "000000",
+                }),
+              ],
+              spacing: { line: 380 },
+              alignment: AlignmentType.JUSTIFIED,
             }),
-
 
             ...(special_Terms
               ? [

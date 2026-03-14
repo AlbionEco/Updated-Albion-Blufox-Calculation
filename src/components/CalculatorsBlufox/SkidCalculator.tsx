@@ -459,11 +459,11 @@ const SkidCalculator: React.FC = () => {
 
                         {results.type === 'BF_SINGLE' && (
                           <>
-                            <TableRow label='1/2" Nipple Qty (2" long)' value={results.nippleQty} unit="Nos." />
+                            <TableRow label='1/2" Nipple Qty (1.25" long)' value={results.nippleQty} unit="Nos." />
                             {results.thickBoxpipe50 > 0 && (
-                              <TableRow label="50mm x 50mm x 2mm thick Box Pipe" value={results.thickBoxpipe50.toFixed(2)} unit="mtr" highlight />
+                              <TableRow label="50mm x 50mm x 2mm Thick Box Pipe" value={results.thickBoxpipe50.toFixed(2)} unit="mtr" highlight />
                             )}
-                            <TableRow label="40mm x 40mm x 2mm thick Box Pipe" value={results.thickBoxpipe.toFixed(2)} unit="mtr" highlight />
+                            <TableRow label="40mm x 40mm x 2mm Thick Box Pipe" value={results.thickBoxpipe.toFixed(2)} unit="mtr" highlight />
                             <TableRow label={results.threadedNippleLabel} value={results.threadedNippleQty} unit="Nos." />
                             <TableRow label={results.flangeLabel} value={results.flangeQty} unit="Nos." />
                           </>
@@ -471,10 +471,10 @@ const SkidCalculator: React.FC = () => {
 
                         {results.type === 'BF_DOUBLE' && (
                           <>
-                            <TableRow label='1/2" Nipple Qty (2" long)' value={results.nippleQty} unit="Nos." />
-                            <TableRow label="80mm x 40mm x 2mm thick Box Pipe" value={results.pipe80mm} unit="mtr" highlight />
-                            <TableRow label="50mm x 50mm x 2mm thick Box Pipe" value={results.pipe50mm} unit="mtr" highlight />
-                            <TableRow label="40mm x 40mm x 2mm thick Box Pipe" value={results.pipe40mm} unit="mtr" highlight />
+                            <TableRow label='1/2" Nipple Qty (1.25" long)' value={results.nippleQty} unit="Nos." />
+                            <TableRow label="80mm x 40mm x 2-3mm / 100mm x 50mm x 2-3mm Thick Box Pipe" value={results.pipe80mm} unit="mtr" highlight />
+                            <TableRow label="50mm x 50mm x 2mm Thick Box Pipe" value={results.pipe50mm} unit="mtr" highlight />
+                            <TableRow label="40mm x 40mm x 2mm Thick Box Pipe" value={results.pipe40mm} unit="mtr" highlight />
                             <TableRow label='1.5" Threaded Nipple (3" long)' value="2" unit="Nos." />
                             <TableRow label='1.5" Flange' value="2" unit="Nos." />
                             <TableRow label='2" Threaded Nipple (4" long)' value="1" unit="Nos." />
@@ -517,7 +517,7 @@ const SkidCalculator: React.FC = () => {
                     <div className="text-xs text-slate-600 space-y-1">
                       {results.type === 'BF_SINGLE' && (
                         <>
-                          <p>• Order 1/2" Nipple 4" long = 2" long - 2 Nos.</p>
+                          <p>• Order 1/2" Nipple 2.5" long = 1.25" long - 2 Nos.</p>
                           <p>• Order 1.5" Pipe 6" long = 3" long - 2 Nos.</p>
                         </>
                       )}

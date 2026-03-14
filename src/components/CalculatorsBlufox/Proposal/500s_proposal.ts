@@ -3,6 +3,7 @@ import autoTable from "jspdf-autotable";
 import * as docx from "docx";
 import { saveAs } from "file-saver";
 import { loadImage, base64ToUint8Array, formatToDDMMYYYY } from "./utils";
+import { TextWrappingType } from "docx";
 
 // Extend jsPDF type for autotable
 declare module "jspdf" {
@@ -12,6 +13,18 @@ declare module "jspdf" {
       finalY: number;
     };
   }
+}
+async function drawBackground(doc: any, watermark: any) {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+
+  const imgWidth = 130;
+  const imgHeight = 130;
+
+  const x = (pageWidth - imgWidth) / 2;
+  const y = (pageHeight - imgHeight) / 2;
+
+  doc.addImage(watermark, "JPG", x, y, imgWidth, imgHeight);
 }
 
 export async function generate500SProposal(
@@ -93,6 +106,8 @@ export async function generate500SProposal(
 
     setProgress(30, "Initializing PDF...");
     const doc = new jsPDF({ compress: true, unit: "mm", format: "a4" });
+    const watermark = await loadImage("/Blufox Logo.jpg");
+    await drawBackground(doc, watermark);
     const pageWidth = doc.internal.pageSize.width;
     const pageHeight = doc.internal.pageSize.height;
     const headerHeight = 25;
@@ -168,6 +183,7 @@ export async function generate500SProposal(
     // Page 2 - Product Features
     setProgress(50, "Creating Product Features...");
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
     doc.setFontSize(14);
     doc.setFont("helvetica", "bolditalic");
@@ -222,6 +238,7 @@ export async function generate500SProposal(
 
     // Page 3 - More Features & Process
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
     addBullet(
       "Reproduction of Nitro bacteria:",
@@ -256,6 +273,7 @@ The filtration takes place by means of suction pump which delivers the treated w
 
     // Page 4 - Operating Conditions & Specs
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
@@ -295,6 +313,14 @@ The filtration takes place by means of suction pump which delivers the treated w
       },
       alternateRowStyles: { fillColor: [240, 240, 240] },
       bodyStyles: { fillColor: [255, 255, 255], textColor: "#4b4b4b" },
+      didParseCell: function (data) {
+        const rowLabel = data.row.cells[0].raw; // Gets the label from the first column
+
+        // If it's the specific row AND it's the second column (index 1)
+        if (rowLabel === "Surface Area (MBR)" && data.column.index === 1) {
+          data.cell.styles.fontStyle = "bold";
+        }
+      },
     });
     currentY = doc.lastAutoTable.finalY + 10;
 
@@ -316,6 +342,7 @@ The filtration takes place by means of suction pump which delivers the treated w
 
     // Page 5 - P&ID
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
     doc.setFontSize(14);
     doc.setFont("helvetica", "bolditalic");
@@ -325,6 +352,7 @@ The filtration takes place by means of suction pump which delivers the treated w
 
     // Page 7 - Offer Parameters
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
     doc.setFontSize(14);
     doc.setFont("helvetica", "bolditalic");
@@ -395,9 +423,10 @@ The filtration takes place by means of suction pump which delivers the treated w
     const pageBottomLimit = pageHeight - footerHeight - 10; // Buffer space before footer
 
     // Function to handle Page Breaks
-    function checkPageBreak(requiredSpace) {
+    async function checkPageBreak(requiredSpace) {
       if (currentY + requiredSpace > pageBottomLimit) {
         doc.addPage();
+        await drawBackground(doc, watermark);
         // add header and footet for the new page
         applyHeaderFooter();
         currentY = headerHeight + 15; // Reset Y position for new page
@@ -405,6 +434,7 @@ The filtration takes place by means of suction pump which delivers the treated w
     }
 
     doc.addPage();
+    await drawBackground(doc, watermark);
     currentY = headerHeight + 15;
     doc.setFontSize(14);
     doc.setFont("helvetica", "bolditalic");
@@ -443,7 +473,7 @@ The filtration takes place by means of suction pump which delivers the treated w
       },
       styles: { fontStyle: "normal", halign: "center", textColor: 0 },
     });
-currentY = doc.lastAutoTable.finalY + 10;
+    currentY = doc.lastAutoTable.finalY + 10;
 
     doc.setFontSize(14);
     doc.setFont("helvetica", "bolditalic");
@@ -475,7 +505,7 @@ Plant Capacity: ${flowRate} KLD ${treatment_Type}`,
         fontStyle: "bold",
         halign: "center",
       },
-      styles: { fontStyle: "normal", halign: "left", textColor: 0 },
+      styles: { fontStyle: "normal", halign: "center", textColor: 0 },
       didParseCell: function (data) {
         if (data.column.index === 2 || data.column.index === 3) {
           data.cell.styles.halign = "center";
@@ -575,7 +605,6 @@ Plant Capacity: ${flowRate} KLD ${treatment_Type}`,
       doc.text(lines, 20, currentY);
       currentY += blockHeight + 2;
     });
-
 
     // --- SPECIAL TERMS (Dynamic Length) ---
     if (special_Terms && special_Terms.trim() !== "") {
@@ -718,6 +747,9 @@ export async function generate500SWordProposal(
     const formattedDate = formatToDDMMYYYY(date);
 
     setProgress(20, "Loading Image Assets...");
+    const watermarkBuffer = base64ToUint8Array(
+      await loadImage("/Blufox Logo.jpg"),
+    );
     const headerBuffer = base64ToUint8Array(
       await loadImage("/Images for Proposal/header.jpg"),
     );
@@ -784,11 +816,37 @@ export async function generate500SWordProposal(
                     new ImageRun({
                       data: headerBuffer,
                       transformation: { width: 795, height: 90 },
-                       type: "jpg",
+                      type: "jpg",
                     }),
                   ],
                   indent: { left: -1200, right: -1200 },
                   spacing: { before: 0, after: 0 },
+                }),
+                new Paragraph({
+                  children: [
+                    new ImageRun({
+                      data: watermarkBuffer,
+                      transformation: {
+                        width: 500,
+                        height: 500,
+                      },
+                      floating: {
+                        horizontalPosition: {
+                          relative: "page",
+                          align: "center",
+                        },
+                        verticalPosition: {
+                          relative: "page",
+                          align: "center",
+                        },
+                        behindDocument: true,
+                        wrap: {
+                          type: TextWrappingType.NONE,
+                        },
+                      },
+                      type: "jpg",
+                    }),
+                  ],
                 }),
               ],
             }),
@@ -801,7 +859,7 @@ export async function generate500SWordProposal(
                     new ImageRun({
                       data: footerBuffer,
                       transformation: { width: 795, height: 100 },
-                       type: "jpg",
+                      type: "jpg",
                     }),
                   ],
                   indent: { left: -1200, right: -1200 },
@@ -859,7 +917,7 @@ export async function generate500SWordProposal(
                 new ImageRun({
                   data: membraneImgBuffer,
                   transformation: { width: 200, height: 350 },
-                   type: "jpg",
+                  type: "jpg",
                 }),
               ],
               alignment: AlignmentType.CENTER,
@@ -1031,13 +1089,21 @@ export async function generate500SWordProposal(
             new Table({
               width: { size: 100, type: WidthType.PERCENTAGE },
               borders: {
-  top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideHorizontal: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideVertical: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-},
+                top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                insideHorizontal: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+                insideVertical: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+              },
               rows: [
                 new TableRow({
                   children: ["Parameters", "Unit"].map(
@@ -1100,6 +1166,9 @@ export async function generate500SWordProposal(
                                   new TextRun({
                                     text: c.toString(),
                                     color: "4b4b4b",
+                                    bold:
+                                      row[0] === "Surface Area (MBR)" &&
+                                      row.indexOf(c) === 1,
                                   }),
                                 ],
                               }),
@@ -1147,8 +1216,8 @@ export async function generate500SWordProposal(
                 new ImageRun({
                   data: pidImgBuffer,
                   transformation: { width: 600, height: 800 },
-                   type: "jpg",
-                } ),
+                  type: "jpg",
+                }),
               ],
               alignment: AlignmentType.CENTER,
             }),
@@ -1169,13 +1238,21 @@ export async function generate500SWordProposal(
             new Table({
               width: { size: 100, type: WidthType.PERCENTAGE },
               borders: {
-  top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideHorizontal: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideVertical: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-},
+                top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                insideHorizontal: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+                insideVertical: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+              },
               rows: [
                 new TableRow({
                   children: ["Parameters", "Unit", "Range"].map(
@@ -1279,13 +1356,21 @@ export async function generate500SWordProposal(
             new Table({
               width: { size: 100, type: WidthType.PERCENTAGE },
               borders: {
-  top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideHorizontal: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideVertical: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-},
+                top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                insideHorizontal: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+                insideVertical: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+              },
               rows: [
                 new TableRow({
                   children: [
@@ -1376,13 +1461,21 @@ export async function generate500SWordProposal(
             new Table({
               width: { size: 100, type: WidthType.PERCENTAGE },
               borders: {
-  top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideHorizontal: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-  insideVertical: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
-},
+                top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                insideHorizontal: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+                insideVertical: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+              },
               rows: [
                 new TableRow({
                   children: ["No.", "Item", "Qty.", "Total Price (Rs.)"].map(
@@ -1414,7 +1507,12 @@ export async function generate500SWordProposal(
                         left: 200,
                         right: 200,
                       },
-                      children: [new Paragraph({ text: "1." })],
+                      children: [
+                        new Paragraph({
+                          text: "1.",
+                          alignment: AlignmentType.CENTER,
+                        }),
+                      ],
                     }),
                     new TableCell({
                       verticalAlign: VerticalAlign.CENTER,
