@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Printer, Calculator, FileText, Info, Zap } from 'lucide-react';
+import { table } from 'console';
 
 const ProjectionCalculator: React.FC = () => {
   const [inputs, setInputs] = useState({
@@ -10,6 +11,10 @@ const ProjectionCalculator: React.FC = () => {
     noOfMembraneTank: 1,
     workingHr: 20,
     designBase: 'with_BW',
+    inlettype: 'sewagewater',
+    NacloConcentrationOfChemical: 0,
+    NaohConcentrationOfChemical: 0,
+    AcidConcentrationOfChemical: 0,
   });
 
   const [results, setResults] = useState<any>(null);
@@ -23,17 +28,28 @@ const ProjectionCalculator: React.FC = () => {
   };
 
   const calculate = () => {
-    const { module, flowRate, noOfTrain, flux, noOfMembraneTank, workingHr, designBase } = inputs;
+    const { module, flowRate, noOfTrain, flux, noOfMembraneTank, workingHr, designBase,
+      NacloConcentrationOfChemical, NaohConcentrationOfChemical, AcidConcentrationOfChemical } = inputs;
 
     let relaxation = 0;
     let CEBtext = "";
-    if (designBase === "with_BW") {
-      CEBtext = "CEB (Maintenance cleaning - Every 10-15 days)";
+    if (["12B6", "12B9", "12B12", "12B38", "12B57"].includes(String(module))) {
       relaxation = 1;
+      if (designBase === "with_BW") {
+        CEBtext = "CEB (Maintenance cleaning - Every 10-15 days)";
+      } else {
+        CEBtext = "CEB (Maintenance cleaning - Every day as per vaccume pressure)";
+      }
     } else {
-      CEBtext = "CEB (Maintenance cleaning - Every day as per vaccume pressure)";
-      relaxation = 2;
+      if (designBase === "with_BW") {
+        CEBtext = "CEB (Maintenance cleaning - Every 10-15 days)";
+        relaxation = 1;
+      } else {
+        CEBtext = "CEB (Maintenance cleaning - Every day as per vaccume pressure)";
+        relaxation = 2;
+      }
     }
+
 
     let membraneSurfaceAreaPerMBR = 0;
     const moduleMap: Record<string, number> = {
@@ -41,11 +57,16 @@ const ProjectionCalculator: React.FC = () => {
       "BF100N": 10, "BF150N": 15, "BF200N": 20, "BF100oxy": 10,
       "BF220oxy": 22, "SUS100": 10, "SUS200": 20, "SUS300": 30,
       "SUS313": 31.3, "SUS400": 40, "BF500D(430)": 40.9,
-      "BF500D(370)": 34.4, "BF500D(340)": 31.6, "BF500S": 28
+      "BF500D(370)": 34.4, "BF500D(340)": 31.6, "BF500S": 28,
+      "12B6": 6, "12B9": 9, "12B12": 12, "12B38": 38, "12B57": 57
     };
     membraneSurfaceAreaPerMBR = moduleMap[module] || 0;
 
-    const TotalNumberOfModule = Math.ceil((flowRate * 1000) / (flux * workingHr * membraneSurfaceAreaPerMBR));
+    let TotalNumberOfModule = Math.ceil((flowRate * 1000) / (flux * workingHr * membraneSurfaceAreaPerMBR));
+    if (module.startsWith("12B")) {
+      TotalNumberOfModule = Math.ceil((flowRate * 1000) / (flux * 25 * workingHr * membraneSurfaceAreaPerMBR));
+    }
+
     const NoofModulePerTrain = Math.ceil(TotalNumberOfModule / noOfTrain);
     const MembraneSurfaceAreaPerTrain = NoofModulePerTrain * membraneSurfaceAreaPerMBR;
     const TotalMembraneSurfaceArea = parseFloat((TotalNumberOfModule * membraneSurfaceAreaPerMBR).toFixed(1));
@@ -57,46 +78,131 @@ const ProjectionCalculator: React.FC = () => {
 
     if (["BF100", "BF125", "BF100N", "BF100oxy"].includes(module)) {
       length = ((NoofModulePerTrain + 1) * 85 + 100) / 1000;
-      width = 0.71; height = 1.3; effectiveWaterDepth = 1.6; width2 = 2.3;
+      width = 0.71;
+      height = 1.3;
+      effectiveWaterDepth = 1.6;
+      width2 = 2.3;
     } else if (["BF200", "BF150N"].includes(module)) {
       length = ((NoofModulePerTrain + 1) * 85 + 100) / 1000;
-      width = 0.71; height = 1.8; effectiveWaterDepth = 2.1; width2 = 3;
+      width = 0.71;
+      height = 1.8;
+      effectiveWaterDepth = 2.1;
+      width2 = 3;
     } else if (module === "BF220oxy") {
       length = ((NoofModulePerTrain + 1) * 85 + 100) / 1000;
-      width = 0.71; height = 2.055; effectiveWaterDepth = 2.4; width2 = 3;
+      width = 0.71;
+      height = 2.055;
+      effectiveWaterDepth = 2.4;
+      width2 = 3;
     } else if (["BF300", "BF200N"].includes(module)) {
       length = ((NoofModulePerTrain + 1) * 85 + 100) / 1000;
-      width = 0.71; height = 2.3; effectiveWaterDepth = 2.7; width2 = 4;
+      width = 0.71;
+      height = 2.3;
+      effectiveWaterDepth = 2.7;
+      width2 = 4;
     } else if (module === "SUS100") {
       length = ((NoofModulePerTrain * 33) + ((NoofModulePerTrain + 1) * 25) + 100) / 1000;
-      width = 0.68; height = 1.85; effectiveWaterDepth = 2.8; width2 = 1.85;
+      width = 0.68;
+      height = 1.85;
+      effectiveWaterDepth = 2.8;
+      width2 = 1.85;
     } else if (module === "SUS200") {
       length = ((NoofModulePerTrain * 33) + ((NoofModulePerTrain + 1) * 25) + 100) / 1000;
-      width = 1.25; height = 1.85; effectiveWaterDepth = 2.8; width2 = 1.85;
+      width = 1.25;
+      height = 1.85;
+      effectiveWaterDepth = 2.8;
+      width2 = 1.85;
     } else if (["SUS300", "SUS400"].includes(module)) {
       length = ((NoofModulePerTrain * 33) + ((NoofModulePerTrain + 1) * 25) + 100) / 1000;
-      width = 1.25; height = 2.5; effectiveWaterDepth = 3.5; width2 = 2.5;
+      width = 1.25;
+      height = 2.5;
+      effectiveWaterDepth = 3.5;
+      width2 = 2.5;
     } else if (module === "SUS313") {
       length = ((NoofModulePerTrain * 33) + ((NoofModulePerTrain + 1) * 25) + 100) / 1000;
-      width = 1.25; height = 2.55; effectiveWaterDepth = 3.55; width2 = 2.55;
+      width = 1.25;
+      height = 2.55;
+      effectiveWaterDepth = 3.55;
+      width2 = 2.55;
     } else if (module.startsWith("BF500D")) {
       length = Math.ceil(((NoofModulePerTrain * 49) + ((NoofModulePerTrain + 1) * 40) + 100) * 100) / 100 / 1000;
-      width = 0.844; height = 2.598; effectiveWaterDepth = 3.598; width2 = 1.444;
+      width = 0.844;
+      height = 2.598;
+      effectiveWaterDepth = 3.598;
+      width2 = 1.444;
     } else if (module === "BF500S") {
       length = Math.ceil(((NoofModulePerTrain + 1) * 85 + 100) * 100) / 100 / 1000;
-      width = 0.53; height = 2.1388; effectiveWaterDepth = 2.4388; width2 = 3.7;
+      width = 0.53;
+      height = 2.1388;
+      effectiveWaterDepth = 2.4388;
+      width2 = 3.7;
+    } else if (["12B6", "12B9", "12B12", "12B38", "12B57"].includes(module)) {
+      length = ((NoofModulePerTrain / 2) * 143) + (((NoofModulePerTrain - 1) / 2) * 25) + (NoofModulePerTrain * 5) + 90;
+      if (NoofModulePerTrain < 26) {
+        width = 0.528;
+      } else {
+        width = 0.548;
+      }
+      if (module === "12B6") {
+        height = 1.3;
+        effectiveWaterDepth = 1.6; 
+        width2 = 1.6;
+      } else if (module === "12B9") {
+        height = 0;
+        effectiveWaterDepth = 0; 
+        width2 = 0;
+      } else if (module === "12B12") {
+        height = 2.41;
+        effectiveWaterDepth = 2.71; 
+        width2 = 1.6;
+      } else if (module === "12B38") {
+        height = 2.2;
+        effectiveWaterDepth = 2.5; 
+        width2 = 1.6;
+      } else if (module === "12B57") {
+        height = 3.22;
+        effectiveWaterDepth = 3.52; 
+        width2 = 1.6;
+      }
     }
-
     surfaceareapertrain = (length + 0.6) * (width + 0.6) * (height + 0.3);
     if (module.startsWith("SUS")) {
       surfaceareapertrain = (length + 0.8) * (width + 0.6) * (height + 1);
     }
 
     const TotalMembraneTankVolume = parseFloat((noOfTrain * surfaceareapertrain).toFixed(1));
+console.log("noOfTrain", noOfTrain);
+console.log("surfaceareapertrain", surfaceareapertrain);
+console.log("TotalMembraneTankVolume", TotalMembraneTankVolume);
+
+
+
     const lengthinsidepertank = parseFloat((TotalMembraneTankVolume / effectiveWaterDepth / width2).toFixed(1));
-    const RequiredTotalFlowrateforpeakflux = parseFloat((flowRate / workingHr).toFixed(1));
-    const filteration = 8;
-    const backwash = 1;
+    let RequiredTotalFlowrateforpeakflux = 0;
+    let RequiredTotalFlowrateforpeakfluxlabel = "";
+
+    if (module.startsWith("12B")) {
+      RequiredTotalFlowrateforpeakflux = parseFloat(((flowRate / workingHr) + 15 / 100).toFixed(1));
+      RequiredTotalFlowrateforpeakfluxlabel = "Required Total flow rate for peak flux @15m (H)"
+    } else {
+      RequiredTotalFlowrateforpeakflux = parseFloat((flowRate / workingHr).toFixed(1));
+      RequiredTotalFlowrateforpeakfluxlabel = "Required Total flow rate for peak flux"
+    }
+
+    let filteration = 0;
+    if (["12B6", "12B9", "12B12", "12B38", "12B57"].includes(String(module))) {
+      filteration = 9;
+    }
+    else {
+      filteration = 8;
+    }
+    let backwash = "0";
+    if (["12B6", "12B9", "12B12", "12B38", "12B57"].includes(String(module))) {
+      backwash = "Can be applied <100kPa / <1bar";
+    }
+    else {
+      backwash = "1";
+    }
     const RequiredBackwashFlowRate = parseFloat((RequiredTotalFlowrateforpeakflux * 1.5).toFixed(1));
 
     let RequiredtotalAirFlowRate = 0;
@@ -104,6 +210,12 @@ const ProjectionCalculator: React.FC = () => {
       RequiredtotalAirFlowRate = parseFloat((TotalMembraneSurfaceArea * 0.3).toFixed(1));
     } else if (module.substring(0, 3) === "SUS") {
       RequiredtotalAirFlowRate = parseFloat((TotalMembraneSurfaceArea * 0.25).toFixed(1));
+    } else if (module.substring(0, 3) === "12B") {
+      if (inputs.inlettype === "sewagewater") {
+        RequiredtotalAirFlowRate = parseFloat((TotalMembraneSurfaceArea * 0.3).toFixed(1));
+      } else if (inputs.inlettype === "effluentwater") {
+        RequiredtotalAirFlowRate = parseFloat((TotalMembraneSurfaceArea * 0.45).toFixed(1));
+      }
     }
 
     const RequiredtotalAirFlowRatepereach = parseFloat((RequiredtotalAirFlowRate / noOfTrain).toFixed(1));
@@ -140,6 +252,41 @@ const ProjectionCalculator: React.FC = () => {
     const CipDosingPumpCapacity = Math.round((CipRequiredChemicalQuantityeachTime / CipChemicalSolutionInjectionTime) * 60);
     const AcidDosingPumpCapacity = Math.round((acidRequiredChemicalQuantityeachTime / acidChemicalSolutionInjectionTime) * 60);
 
+
+    const watervolumeinMembranePerTrain = 2 * TotalNumberOfModule / 1000;
+    const watervolumeinPipesPerTrain = watervolumeinMembranePerTrain * 1.5;
+    const totalwatervolumePertrain = Math.ceil((watervolumeinMembranePerTrain + watervolumeinPipesPerTrain) * 100) / 100;
+    let CIPrunningTimeForChemicalInjection = 20;
+    const CIPQuantity = CIPrunningTimeForChemicalInjection > 0 ? Math.ceil((totalwatervolumePertrain / CIPrunningTimeForChemicalInjection / 1 * 1.15) * 100) / 100 : 0;
+
+    const NacloChemicalInjectionRatioForCIP = 500;
+    const NacloChemicalInjectionRatioForHCIP = 3000;
+    const NaclosubQuantity = NacloConcentrationOfChemical > 0 ? NacloChemicalInjectionRatioForCIP * (CIPQuantity / 1.15) / 1000 / (NacloConcentrationOfChemical / 100) * 1.15 : 0;
+    const NacloQuantity = NacloConcentrationOfChemical > 0 ? NacloChemicalInjectionRatioForHCIP * (CIPQuantity / 1.15) / 1000 / (NacloConcentrationOfChemical / 100) * 1.15 : 0;
+    const NacloTotalDynamicHead = 0.2;
+    const NacloRequiredChemicalperCIP = NacloConcentrationOfChemical > 0 ? totalwatervolumePertrain * noOfTrain * NacloChemicalInjectionRatioForCIP / 1000 / (NacloConcentrationOfChemical / 100) : 0;
+    const NacloRequiredChemicalperHCIP = NacloConcentrationOfChemical > 0 ? totalwatervolumePertrain * noOfTrain * NacloChemicalInjectionRatioForHCIP / 1000 / (NacloConcentrationOfChemical / 100) : 0;
+    const NacloTankCapacityMoreThan = Math.round(NacloRequiredChemicalperHCIP);
+
+    const NaohChemicalInjectionRatioForCIP = 200;
+    const NaohChemicalInjectionRatioForHCIP = 5000;
+    const NaohsubQuantity = NaohConcentrationOfChemical > 0 ? NaohChemicalInjectionRatioForCIP * (CIPQuantity / 1.15) / 1000 / (NaohConcentrationOfChemical / 100) * 1.15 : 0;
+    const NaohQuantity = NaohConcentrationOfChemical > 0 ? NaohChemicalInjectionRatioForHCIP * (CIPQuantity / 1.15) / 1000 / (NaohConcentrationOfChemical / 100) * 1.15 : 0;
+    const NaohTotalDynamicHead = 0.2;
+    const NaohRequiredChemicalperCIP = NaohConcentrationOfChemical > 0 ? totalwatervolumePertrain * noOfTrain * NaohChemicalInjectionRatioForCIP / 1000 / (NaohConcentrationOfChemical / 100) : 0;
+    const NaohRequiredChemicalperHCIP = NaohConcentrationOfChemical > 0 ? totalwatervolumePertrain * noOfTrain * NaohChemicalInjectionRatioForHCIP / 1000 / (NaohConcentrationOfChemical / 100) : 0;
+    const NaohTankCapacityMoreThan = Math.ceil(NaohRequiredChemicalperHCIP);
+
+    const AcidChemicalInjectionRatioForCIP = 1000;
+    const AcidChemicalInjectionRatioForHCIP = 10000;
+    const AcidsubQuantity = AcidConcentrationOfChemical > 0 ? AcidChemicalInjectionRatioForCIP * (CIPQuantity / 1.15) / 1000 / (AcidConcentrationOfChemical / 100) * 1.15 : 0;
+    const AcidQuantity = AcidConcentrationOfChemical > 0 ? AcidChemicalInjectionRatioForHCIP * (CIPQuantity / 1.15) / 1000 / (AcidConcentrationOfChemical / 100) * 1.15 : 0;
+    const AcidTotalDynamicHead = 0.2;
+    const AcidRequiredChemicalperCIP = AcidConcentrationOfChemical > 0 ? totalwatervolumePertrain * noOfTrain * AcidChemicalInjectionRatioForCIP / 1000 / (AcidConcentrationOfChemical / 100) : 0;
+    const AcidRequiredChemicalperHCIP = AcidConcentrationOfChemical > 0 ? totalwatervolumePertrain * noOfTrain * AcidChemicalInjectionRatioForHCIP / 1000 / (AcidConcentrationOfChemical / 100) : 0;
+    const AcidTankCapacityMoreThan = Math.ceil(AcidRequiredChemicalperHCIP);
+
+
     let ModuleSize = "";
     if (["BF100", "BF125", "BF100N", "BF100oxy"].includes(module)) ModuleSize = "1000 x 534 x 46";
     else if (["BF200", "BF150N"].includes(module)) ModuleSize = "1500 x 534 x 46";
@@ -148,8 +295,13 @@ const ProjectionCalculator: React.FC = () => {
     else if (module === "SUS100") ModuleSize = "1300 x 680 x 30";
     else if (module === "SUS200") ModuleSize = "1300 x 1250 x 30";
     else if (["SUS300", "SUS313", "SUS400"].includes(module)) ModuleSize = "2000 x 1250 x 30";
-    else if (module.startsWith("BF500D")) ModuleSize = "2198 x 844 x 49";
+    else if (module === "BF500D") ModuleSize = "2198 x 844 x 49";
     else if (module === "BF500S") ModuleSize = "1838.8 x 355 x 217";
+    else if (module === "12B6") ModuleSize = "1300 x 156 x 164";
+    else if (module === "12B9") ModuleSize = "";
+    else if (module === "12B12") ModuleSize = "2410 x 156 x 164";
+    else if (module === "12B38") ModuleSize = "2200 x 50 x 840";
+    else if (module === "12B57") ModuleSize = "3220 x 50 x 840";
 
     setResults({
       membraneSurfaceAreaPerMBR,
@@ -166,6 +318,7 @@ const ProjectionCalculator: React.FC = () => {
       width2,
       effectiveWaterDepth,
       RequiredTotalFlowrateforpeakflux,
+      RequiredTotalFlowrateforpeakfluxlabel,
       filteration,
       relaxation,
       backwash,
@@ -204,7 +357,7 @@ const ProjectionCalculator: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 font-sans text-slate-900">
+    <div className="max-w-7xl mx-auto px-4 py-8 font-sans text-slate-900" id="BlufoxProjection">
       {/* Header Section */}
       <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4 border-b-2 border-slate-900 pb-6 no-print">
         <div>
@@ -262,11 +415,18 @@ const ProjectionCalculator: React.FC = () => {
                     <option value="SUS313">SUS313</option>
                     <option value="SUS400">SUS400</option>
                   </optgroup>
-                  <optgroup label="BF-D Series">
+                  <optgroup label="BF-500 Series">
                     <option value="BF500D(430)">BF500D (430)</option>
                     <option value="BF500D(370)">BF500D (370)</option>
                     <option value="BF500D(340)">BF500D (340)</option>
                     <option value="BF500S">BF500S</option>
+                  </optgroup>
+                  <optgroup label="Sumitomo">
+                    <option value="12B6"> 12B6 (6m2)</option>
+                    <option value="12B9"> 12B9 (9m2)</option>
+                    <option value="12B12"> 12B12 (12m2)</option>
+                    <option value="12B38">12B38 (38m2)</option>
+                    <option value="12B57">12B57 (57m2)</option>
                   </optgroup>
                 </select>
               </div>
@@ -283,6 +443,48 @@ const ProjectionCalculator: React.FC = () => {
 
               <TechnicalInput label="Membrane Tanks" unit="QTY" id="noOfMembraneTank" value={inputs.noOfMembraneTank} onChange={handleInputChange} />
 
+              {inputs.module?.startsWith("12B") && (
+                <>
+                  <div className="grid grid-cols-3 gap-2">
+                    <TechnicalInput label="NaClO" unit="%" id="NacloConcentrationOfChemical" value={inputs.NacloConcentrationOfChemical} onChange={handleInputChange} />
+                    <TechnicalInput label="NaOH" unit="%" id="NaohConcentrationOfChemical" value={inputs.NaohConcentrationOfChemical} onChange={handleInputChange} />
+                    <TechnicalInput label="Acid" unit="%" id="AcidConcentrationOfChemical" value={inputs.AcidConcentrationOfChemical} onChange={handleInputChange} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      Inlet Water Type
+                    </label>
+
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setInputs((p) => ({ ...p, inlettype: "sewagewater" }))
+                        }
+                        className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all border ${inputs.inlettype === "sewagewater"
+                          ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-200"
+                          : "bg-white text-slate-600 border-slate-200 hover:border-blue-300"
+                          }`}
+                      >
+                        Sewage Water
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setInputs((p) => ({ ...p, inlettype: "effluentwater" }))
+                        }
+                        className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all border ${inputs.inlettype === "effluentwater"
+                          ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-200"
+                          : "bg-white text-slate-600 border-slate-200 hover:border-blue-300"
+                          }`}
+                      >
+                        Effluent Water
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
               <div className="space-y-2">
                 <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Design Configuration</label>
                 <div className="flex gap-2">
@@ -322,7 +524,7 @@ const ProjectionCalculator: React.FC = () => {
         </div>
 
         {/* Results Panel */}
-        <div className="xl:col-span-8">
+        <div className="xl:col-span-8 print:my-[-30px] print:mx-[-10px]">
           {results ? (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
               {/* Main Specification Table */}
@@ -417,7 +619,7 @@ const ProjectionCalculator: React.FC = () => {
                           <TableRow label="Number of Membrane Tank" value={inputs.noOfMembraneTank} />
                           <TableRow label="Number of Module per Tank" value={inputs.noOfTrain} />
                           <TableRow label="Total Membrane Tank Volume (SWD)" value={results.TotalMembraneTankVolume} unit="m³" highlight />
-                          <TableRow label="Module Size and Volume (H x L x W)" value={results.ModuleSize} unit="mm" />
+                          <TableRow label="Module Size (H x L x W)" value={results.ModuleSize} unit="mm" />
                           <TableRow label="Length (inside, per tank)" value={results.lengthinsidepertank} unit="m" />
                           <TableRow label="Width (inside, per tank)" value={results.width2} unit="m" />
                           <TableRow label="Effective water depth" value={results.effectiveWaterDepth} unit="m" />
@@ -435,12 +637,21 @@ const ProjectionCalculator: React.FC = () => {
                             <tr className="bg-blue-500/20">
                               <td colSpan={3} className="px-6 py-2 text-[11px] font-black uppercase tracking-widest text-black-400">Permeate Pump</td>
                             </tr>
-                            <TableRow label="Required Total flow rate for peak flux" value={results.RequiredTotalFlowrateforpeakflux} unit="m³/hr" highlight />
-                            <TableRow label="Filtration" value={results.filteration} unit="min" indent />
-                            <TableRow label="Relaxation" value={results.relaxation} unit="min" indent />
+                            <TableRow label={results.RequiredTotalFlowrateforpeakfluxlabel} value={results.RequiredTotalFlowrateforpeakflux} unit="m³/hr" highlight />
+                            <TableRow label="Filtration"
+                              value={results.filteration}
+                              unit="min"
+                              indent />
+                            <TableRow label="Relaxation"
+                              value={results.relaxation}
+                              unit="min" indent />
                             {inputs.designBase === 'with_BW' && (
-                              <TableRow label="Backwash (after every 6 cycle at <1.5 bar)" value={results.backwash} unit="min" indent />
+                              <TableRow label="Backwash (after every 6 cycle at <1.5 bar)"
+                                value={results.backwash}
+                                unit="min" indent />
                             )}
+
+
 
                             {inputs.designBase === 'with_BW' && (
                               <>
@@ -462,7 +673,174 @@ const ProjectionCalculator: React.FC = () => {
                     </div>
 
                   </div>
-                  {/* 4) Chemical Cleaning System */}
+
+                  {inputs.module?.startsWith("12B") && (<>
+                    <div>
+                      <table>
+                        <tbody>
+                          <tr className="bg-blue-500/10">
+                            <td colSpan={3} className="px-6 py-2 text-[12px] font-black uppercase tracking-widest text-blue-800 italic">Chemical Dosing</td>
+                          </tr>
+                          <tr>
+                            <td colSpan={6} className="py-4 px-6">
+                              <div className="grid grid-cols-[6fr_4fr] gap-8">
+
+                                <table className="w-full rounded-xl overflow-hidden border border-gray-200 shadow-sm mr-5">
+                                  <tbody>
+                                    <tr className="bg-green-500/30">
+                                      <td colSpan={3} className="px-3 py-2 text-[12px] font-black uppercase tracking-widest text-black-400">NaClO Pump</td>
+                                    </tr>
+                                    <tr>
+                                      <td colSpan={3} className='px-3 py-2.5 text-[12px] font-medium text-slate-600'>Metering pump can be applied for both CIP and H-CIP.</td>
+                                    </tr>
+                                    <TableRow label="No. of Pump" value={"1"} unit="No." subtable />
+                                    <TableRow label="Concentration of Chemical" value={inputs.NacloConcentrationOfChemical} unit="%" subtable />
+                                    <TableRow label="Chemical Injection Ratio for CIP" value={results.NacloChemicalInjectionRatioForCIP} unit="ppm" subtable />
+                                    <TableRow label="Chemical Injection Ratio for H-CIP" value={results.NacloChemicalInjectionRatioForHCIP} unit="ppm" subtable />
+                                    <TableRow label="Quantity (included 15% margin)" value={`${Number(parseFloat(results.NaclosubQuantity).toFixed(2))} - ${Number(parseFloat(results.NacloQuantity).toFixed(2))}`} unit="L/min" subtable />
+                                    <TableRow label="Total Dynamic Head" value={Number(parseFloat(results.NacloTotalDynamicHead).toFixed(2))} unit="Mpa" subtable />
+                                  </tbody>
+                                </table>
+
+                                <table className="w-full rounded-xl overflow-hidden border border-gray-200 shadow-sm mr-5">
+                                  <tbody>
+                                    <tr className="bg-green-500/30">
+                                      <td colSpan={3} className="px-3 py-2 text-[12px] font-black uppercase tracking-widest text-black-400">NaClO Tank</td>
+                                    </tr>
+                                    <TableRow label="No. of tank" value={"1"} unit="No." subtable />
+                                    <TableRow label="Capacity more than" value={Number(parseFloat(results.NacloTankCapacityMoreThan).toFixed(2))} unit="min" subtable />
+                                    <TableRow label="Required Chemical per CIP" value={Number(parseFloat(results.NacloRequiredChemicalperCIP).toFixed(2))} unit="L" subtable />
+                                    <TableRow label="Required Chemical per H-CIP" value={Number(parseFloat(results.NacloRequiredChemicalperHCIP).toFixed(2))} unit="L" subtable />
+                                  </tbody>
+                                </table>
+                              </div>
+                            </td>
+                          </tr>
+
+                          <tr>
+                            <td colSpan={6} className="py-4 px-6">
+                              <div className="grid grid-cols-[6fr_4fr] gap-8">
+
+                                <table className="w-full rounded-xl overflow-hidden border border-gray-200 shadow-sm mr-5">
+                                  <tbody>
+                                    <tr className="bg-purple-500/30">
+                                      <td colSpan={3} className="px-3 py-2 text-[12px] font-black uppercase tracking-widest text-black-400">NaOH Pump</td>
+                                    </tr>
+                                    <tr>
+                                      <td colSpan={3} className='px-3 py-2.5 text-[12px] font-medium text-slate-600'>Metering pump can be applied for both CIP and H-CIP.</td>
+                                    </tr>
+                                    <TableRow label="No. of Pump" value={"1"} unit="No." subtable />
+                                    <TableRow label="Concentration of Chemical" value={inputs.NaohConcentrationOfChemical} unit="%" subtable />
+                                    <TableRow label="Chemical Injection Ratio for CIP" value={results.NaohChemicalInjectionRatioForCIP} unit="ppm" subtable />
+                                    <TableRow label="Chemical Injection Ratio for H-CIP" value={results.NaohChemicalInjectionRatioForHCIP} unit="ppm" subtable />
+                                    <TableRow label="Quantity (included 15% margin)" value={`${Number(parseFloat(results.NaohsubQuantity).toFixed(2))} - ${Number(parseFloat(results.NaohQuantity).toFixed(2))}`} unit="L/min" subtable />
+                                    <TableRow label="Total Dynamic Head" value={Number(parseFloat(results.NaohTotalDynamicHead).toFixed(2))} unit="Mpa" subtable />
+                                  </tbody>
+                                </table>
+
+                                <table className="w-full rounded-xl overflow-hidden border border-gray-200 shadow-sm mr-5">
+                                  <tbody>
+                                    <tr className="bg-purple-500/30">
+                                      <td colSpan={3} className="px-3 py-2 text-[12px] font-black uppercase tracking-widest text-black-400">NaOH Tank</td>
+                                    </tr>
+                                    <TableRow label="No. of tank" value={"1"} unit="No." subtable />
+                                    <TableRow label="Capacity more than" value={Number(parseFloat(results.NaohTankCapacityMoreThan).toFixed(2))} unit="min" subtable />
+                                    <TableRow label="Required Chemical per CIP" value={Number(parseFloat(results.NaohRequiredChemicalperCIP).toFixed(2))} unit="L" subtable />
+                                    <TableRow label="Required Chemical per H-CIP" value={Number(parseFloat(results.NaohRequiredChemicalperHCIP).toFixed(2))} unit="L" subtable />
+                                  </tbody>
+                                </table>
+                              </div>
+                            </td>
+                          </tr>
+
+                          <tr>
+                            <td colSpan={6} className="py-4 px-6">
+                              <div className="grid grid-cols-[6fr_4fr] gap-8">
+
+                                <table className="w-full rounded-xl overflow-hidden border border-gray-200 shadow-sm mr-5">
+                                  <tbody>
+                                    <tr className="bg-blue-500/30">
+                                      <td colSpan={3} className="px-3 py-2 text-[12px] font-black uppercase tracking-widest text-black-400">Acid Pump</td>
+                                    </tr>
+                                    <tr>
+                                      <td colSpan={3} className='px-3 py-2.5 text-[12px] font-medium text-slate-600'>Metering pump can be applied for both CIP and H-CIP.</td>
+                                    </tr>
+                                    <TableRow label="No. of Pump" value={"1"} unit="No." subtable />
+                                    <TableRow label="Concentration of Chemical" value={inputs.AcidConcentrationOfChemical} unit="%" subtable />
+                                    <TableRow label="Chemical Injection Ratio for CIP" value={results.AcidChemicalInjectionRatioForCIP} unit="ppm" subtable />
+                                    <TableRow label="Chemical Injection Ratio for H-CIP" value={results.AcidChemicalInjectionRatioForHCIP} unit="ppm" subtable />
+                                    <TableRow label="Quantity (included 15% margin)" value={`${Number(parseFloat(results.AcidsubQuantity).toFixed(2))} - ${Number(parseFloat(results.AcidQuantity).toFixed(2))}`} unit="L/min" subtable />
+                                    <TableRow label="Total Dynamic Head" value={Number(parseFloat(results.AcidTotalDynamicHead).toFixed(2))} unit="Mpa" subtable />
+                                  </tbody>
+                                </table>
+
+                                <table className="w-full rounded-xl overflow-hidden border border-gray-200 shadow-sm mr-5">
+                                  <tbody>
+                                    <tr className="bg-blue-500/30">
+                                      <td colSpan={3} className="px-3 py-2 text-[12px] font-black uppercase tracking-widest text-black-400">Acid Tank </td>
+                                    </tr>
+                                    <TableRow label="No. of tank" value={"1"} unit="No." subtable />
+                                    <TableRow label="Capacity more than" value={Number(parseFloat(results.AcidTankCapacityMoreThan).toFixed(2))} unit="min" subtable />
+                                    <TableRow label="Required Chemical per CIP" value={Number(parseFloat(results.AcidRequiredChemicalperCIP).toFixed(2))} unit="L" subtable />
+                                    <TableRow label="Required Chemical per H-CIP" value={Number(parseFloat(results.AcidRequiredChemicalperHCIP).toFixed(2))} unit="L" subtable />
+                                  </tbody>
+                                </table>
+                              </div>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="p-6 bg-slate-50 border-t border-slate-200">
+                      <h4 className="text-xs font-black uppercase tracking-widest text-slate-700 mb-4">Chemical Cleaning Condition</h4>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-[12px] border-collapse">
+                          <thead>
+                            <tr className="bg-slate-200">
+                              <th className="p-2 border border-slate-300">Type</th>
+                              <th className="p-2 border border-slate-300">Chemical</th>
+                              <th className="p-2 border border-slate-300">Concentration</th>
+                              <th className="p-2 border border-slate-300">Cycle</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td className="p-2 border border-slate-300 font-bold">CIP</td>
+                              <td className="p-2 border border-slate-300">Caustic Soda / Sodium Hypochlorite</td>
+                              <td className="p-2 border border-slate-300">200ppm / 500ppm (mixture)</td>
+                              <td className="p-2 border border-slate-300">Every 1-2 weeks</td>
+                            </tr>
+                            <tr>
+                              <td className="p-2 border border-slate-300"></td>
+                              <td className="p-2 border border-slate-300">Sulfuric / Hydrochloric / Citric Acid</td>
+                              <td className="p-2 border border-slate-300">1000 ppm or 2000 ppm</td>
+                              <td className="p-2 border border-slate-300">Every 2-4 weeks</td>
+                            </tr>
+                            <tr>
+                              <td className="p-2 border border-slate-300 font-bold">H-CIP</td>
+                              <td className="p-2 border border-slate-300">Caustic Soda / Sodium Hypochlorite</td>
+                              <td className="p-2 border border-slate-300">5000 ppm / 3000 ppm (mixture)</td>
+                              <td className="p-2 border border-slate-300">Every 3-6 months</td>
+                            </tr>
+                            <tr>
+                              <td className="p-2 border border-slate-300 font-bold"></td>
+                              <td className="p-2 border border-slate-300">Sulfuric / Hydrochloric / Citric Acid</td>
+                              <td className="p-2 border border-slate-300">10,000 ppm / 20,000 ppm</td>
+                              <td className="p-2 border border-slate-300">Every 3-6 months</td>
+                            </tr>
+                            <tr>
+                              <td className="p-2 border border-slate-300 font-bold">OLC</td>
+                              <td className="p-2 border border-slate-300">Same as H-CIP</td>
+                              <td className="p-2 border border-slate-300"></td>
+                              <td className="p-2 border border-slate-300">If necessary</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </>
+                  )}
+
                   <div className="bg-white">
                     <table className="w-full text-left border-collapse">
                       <thead className="bg-slate-50 border-b border-slate-200">
@@ -522,7 +900,7 @@ const ProjectionCalculator: React.FC = () => {
                                 </tbody>
                               </table>
 
-                              {/* Acid Table */}
+
                               <table className="w-full rounded-xl overflow-hidden border border-gray-200 shadow-sm mr-5">
                                 <tbody>
                                   <tr className="bg-green-500/10">
@@ -551,7 +929,7 @@ const ProjectionCalculator: React.FC = () => {
                           <td colSpan={6} className="py-4 px-6">
                             <div className="grid grid-cols-2 gap-8">
 
-                              {/* NaClO Table */}
+
                               <table className="w-full rounded-xl overflow-hidden border border-gray-200 shadow-sm mr-5">
                                 <tbody>
                                   <tr className="bg-green-500/30">
@@ -571,7 +949,7 @@ const ProjectionCalculator: React.FC = () => {
                                 </tbody>
                               </table>
 
-                              {/* Acid Table */}
+
                               <table className="w-full rounded-xl overflow-hidden border border-gray-200 shadow-sm mr-5">
                                 <tbody>
                                   <tr className="bg-green-500/30">
@@ -598,8 +976,6 @@ const ProjectionCalculator: React.FC = () => {
                     </table>
                   </div>
 
-
-                  {/* Notes Section */}
                   <div className="bg-red-50/50 px-6 py-6 border-t border-slate-200">
                     <div className="space-y-2">
                       <p className="text-xs font-black text-red-600 uppercase tracking-widest">Note:</p>
@@ -610,9 +986,9 @@ const ProjectionCalculator: React.FC = () => {
                       </ul>
                     </div>
                   </div>
+
                 </div>
               </div>
-
             </div>
           ) : (
             <div className="h-full min-h-[400px] flex flex-col items-center justify-center text-slate-300 border-2 border-dashed border-slate-200 rounded-3xl">
@@ -620,10 +996,12 @@ const ProjectionCalculator: React.FC = () => {
               <p className="font-black uppercase tracking-[0.2em] text-sm">Awaiting Parameter Input</p>
               <p className="text-xs mt-2">Configure system variables and run projection to view results.</p>
             </div>
-          )}
-        </div>
-      </div>
-    </div>
+          )
+          }
+
+        </div >
+      </div >
+    </div >
   );
 };
 
@@ -644,13 +1022,13 @@ const TechnicalInput: React.FC<{ label: string; unit: string; id: string; value:
   </div>
 );
 
-const TableRow: React.FC<{ label: React.ReactNode; value: any; unit?: string; highlight?: boolean; indent?: boolean }> = ({ label, value, unit, highlight, indent }) => (
+const TableRow: React.FC<{ label: React.ReactNode; value: any; unit?: string; highlight?: boolean; indent?: boolean, subtable?: boolean }> = ({ label, value, unit, highlight, indent, subtable }) => (
   <tr className="hover:bg-slate-50/50 transition-colors">
-    <td className={`px-4 py-2.5 text-[11px] font-medium text-slate-600 ${indent ? 'pl-8' : ''}`}>{label}</td>
-    <td className="px-4 py-2.5 text-right">
+    <td className={`px-4 py-2.5 text-[11px] font-medium text-slate-600 ${subtable ? 'px-2' : 'px-3'} ${indent ? 'pl-8' : ''}`}>{label}</td>
+    <td className={`px-4 py-2.5 text-right ${subtable ? 'px-2' : 'px-3'}`} >
       <span className={`font-mono text-xs font-bold ${highlight ? 'text-blue-600' : 'text-slate-900'}`}>{value}</span>
     </td>
-    <td className="px-4 py-2.5 text-left w-20">
+    <td className={` px-4 py-2.5 text-left w-20 ${subtable ? 'px-2' : 'px-3'} `}>
       {unit && <span className="text-[11px] text-slate-500 uppercase">{unit}</span>}
     </td>
   </tr>

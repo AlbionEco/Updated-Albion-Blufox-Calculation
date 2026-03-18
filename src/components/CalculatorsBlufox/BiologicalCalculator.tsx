@@ -104,7 +104,7 @@ const BiologicalCalculator: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 font-sans text-slate-900">
+    <div className="max-w-7xl mx-auto px-4 py-8 font-sans text-slate-900" id='BlufoxProjection'>
       {/* Header Section */}
       <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4 border-b-2 border-slate-900 pb-6 no-print">
         <div>
@@ -239,10 +239,10 @@ const BiologicalCalculator: React.FC = () => {
         </div>
 
         {/* Results Panel */}
-        <div className="xl:col-span-8">
+        <div className="xl:col-span-8 print:my-[-30px] print:mx-[-10px]">
           {results ? (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="bg-white border-2 border-slate-900 rounded-2xl overflow-hidden shadow-2xl">
+              <div className="bg-white border-2 border-slate-900 rounded-2xl overflow-hidden shadow-2xl print:shadow-none">
                 <div className="bg-slate-900 text-white px-6 py-4 flex justify-between items-center no-print">
                   <div className="flex items-center gap-3">
                     <FileText className="w-5 h-5 text-blue-400" />
@@ -330,7 +330,7 @@ const BiologicalCalculator: React.FC = () => {
                   </div>
 
                   {/* Notes Section */}
-                  <div className="bg-red-50/50 px-6 py-6 border-t border-slate-200">
+                  <div className="bg-red-50/50 px-6 py-6 border-t border-slate-200 print:px-3 print:py-3">
                     <div className="space-y-2">
                       <p className="text-xs font-black text-red-600 uppercase tracking-widest">Note:</p>
                       <ul className="text-[11px] text-red-700/80 space-y-1 font-bold italic">

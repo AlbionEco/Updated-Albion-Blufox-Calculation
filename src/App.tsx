@@ -19,6 +19,8 @@ import BiologicalCalculator from './components/CalculatorsBlufox/BiologicalCalcu
 import SumitomoCalculator from './components//CalculatorsBlufox/SumitomoCalculator.tsx';
 import SkidMaterialCalculator from './components/CalculatorsBlufox/SkidCalculator.tsx';
 import ProposalGenerator from './components/CalculatorsBlufox/Proposal/ProposalGenerator.tsx';
+import Layout3D from './components/Layout3D/Layout3D';
+import Mbr3DLayout from './components/Layout3D/Mbr3DLayout';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const hasToken = document.cookie.includes('token=');
@@ -70,6 +72,14 @@ export default function App() {
             <Route path="skid" element={<SkidMaterialCalculator/>} />
             <Route path="proposal" element={<ProposalGenerator />} />
          </Route>
+         {/* 3D Layout Flow */}
+          <Route path="/layout3d" element={
+            <ProtectedRoute>
+              <Layout3D />
+            </ProtectedRoute>
+          }>
+            <Route index element={<Mbr3DLayout />} />
+          </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

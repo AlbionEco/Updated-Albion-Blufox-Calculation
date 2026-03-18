@@ -261,8 +261,8 @@ const MbbrCalculator: React.FC = () => {
                   <ResultItem label="COD Removal" value={outputs.codoRemoval} unit="kg/d" />
                   <ResultItem label="BOD Removal" value={outputs.bodRemoval} unit="kg/d" />
                   <ResultItem label="TSS Removal" value={outputs.tssRemoved} unit="kg/d" />
-                  <ResultItem label="Aeration Tank Volume" value={outputs.aerationtankvolume} unit="m³" highlight />
-                  <ResultItem label="MBBR Media Qty" value={outputs.mbbrmediaqty} unit="m³" />
+                  <ResultItem label="Aeration Tank Volume" value={outputs.mbbrmediaqty} unit="m³" highlight />
+                  <ResultItem label="MBBR Media Qty" value={outputs.aerationtankvolume} unit="m³" />
                   <ResultItem label="F/M Ratio" value={outputs.fm} unit="Metcalf" />
                   <ResultItem label="MLSS/MLVSS" value={`${outputs.mlss} / ${outputs.mlvss}`} unit="mg/l" />
                   <ResultItem label="Detension Time/HRT" value={outputs.detentionTime} unit="Hrs" />

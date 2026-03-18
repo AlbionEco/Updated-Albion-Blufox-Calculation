@@ -35,4 +35,33 @@
     box-shadow: none !important;
     border: none !important;
   }
+
+  canvas {
+    max-width: 100% !important;
+    height: auto !important;
+    display: block;
+    margin: 0 auto;
+  }
+
+  .printable-canvas-container,
+  .printable-canvas-container * {
+    visibility: visible;
+  }
+
+  .printable-canvas-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+}
+
+
+@media print {
+  #BlufoxProjection table td,
+  #BlufoxProjection table th,
+  #BlufoxProjection table td span {
+     font-size: 10px !important;
+      padding: 6px 10px !important;
+  }
 }

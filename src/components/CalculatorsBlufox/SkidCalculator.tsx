@@ -399,7 +399,7 @@ const SkidCalculator: React.FC = () => {
         </div>
 
         {/* Results Panel */}
-        <div className="xl:col-span-8">
+        <div className="xl:col-span-8 print:my-[-30px] print:mx-[-10px]">
           {results ? (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="bg-white border-2 border-slate-900 rounded-2xl overflow-hidden shadow-2xl">
@@ -413,9 +413,10 @@ const SkidCalculator: React.FC = () => {
                   </button>
                 </div>
 
-                <div className="bg-white p-8">
+                <div className="bg-white">
                   {/* Company Header */}
-                  <div className="flex justify-between items-start mb-8 border-b-2 border-slate-100 pb-8">
+                  <div className="px-6 py-5 bg-blue-50 border-b-2 border-slate-900">
+                  <div className="flex justify-between items-start mb-8 border-b-2 border-slate-100 ">
                     <div className="space-y-1">
                         <h2 className="text-2xl font-black text-slate-900 tracking-tighter">Blufox Ecoventures LLP</h2>
                         <p className="text-[11px] text-slate-600 max-w-md leading-relaxed font-medium">
@@ -441,6 +442,7 @@ const SkidCalculator: React.FC = () => {
                           <p className="text-sm font-black text-slate-800">{results.sitename}</p>
                         </div>
                         )}
+                  </div>
                     </div>
                   </div>
 

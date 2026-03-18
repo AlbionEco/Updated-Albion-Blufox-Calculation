@@ -72,33 +72,86 @@ const SumitomoCalculator: React.FC = () => {
     let Blowerwaterdepth = 0;
 
     if (designedMembraneType === "USPMW-12B38-00") {
-      membraneAreaPerUnit = 1824; PumpLiftingHeight = 4.5; Municipal = 5; Industrial = 7.5; Blowerwaterdepth = 3.5;
+      membraneAreaPerUnit = 1824;
+      PumpLiftingHeight = 4.5;
+      Municipal = 5;
+      Industrial = 7.5;
+      Blowerwaterdepth = 3.5;
     } else if (designedMembraneType === "USPMW-12B38-01") {
-      membraneAreaPerUnit = 1368; PumpLiftingHeight = 4.5; Municipal = 3.8; Industrial = 0.71; Blowerwaterdepth = 3.5;
+      membraneAreaPerUnit = 1368;
+      PumpLiftingHeight = 4.5;
+      Municipal = 3.8;
+      Industrial = 0.71;
+      Blowerwaterdepth = 3.5;
     } else if (designedMembraneType === "USPMW-12B38-02") {
-      membraneAreaPerUnit = 912; PumpLiftingHeight = 4.5; Municipal = 2.6; Industrial = 3.9; Blowerwaterdepth = 3.5;
+      membraneAreaPerUnit = 912; 
+      PumpLiftingHeight = 4.5; 
+      Municipal = 2.6; Industrial = 3.9; 
+      Blowerwaterdepth = 3.5;
     } else if (designedMembraneType === "USPMW-12B38-03") {
-      membraneAreaPerUnit = 456; PumpLiftingHeight = 4.5; Municipal = 1.4; Industrial = 2.1; Blowerwaterdepth = 3.5;
+      membraneAreaPerUnit = 456; 
+      PumpLiftingHeight = 4.5; 
+      Municipal = 1.4; Industrial = 2.1; 
+      Blowerwaterdepth = 3.5;
     } else if (designedMembraneType === "USPMW-12B57-00") {
-      membraneAreaPerUnit = 2736; PumpLiftingHeight = 5.5; Municipal = 5; Industrial = 7.5; Blowerwaterdepth = 4.5;
+      membraneAreaPerUnit = 2736; 
+      PumpLiftingHeight = 5.5; 
+      Municipal = 5; Industrial = 7.5; 
+      Blowerwaterdepth = 4.5;
     } else if (designedMembraneType === "USPMW-12B57-01") {
-      membraneAreaPerUnit = 2052; PumpLiftingHeight = 5.5; Municipal = 3.8; Industrial = 5.7; Blowerwaterdepth = 4.5;
+      membraneAreaPerUnit = 2052; 
+      PumpLiftingHeight = 5.5; 
+      Municipal = 3.8; 
+      Industrial = 5.7; 
+      Blowerwaterdepth = 4.5;
     } else if (designedMembraneType === "USPMW-12B57-02") {
-      membraneAreaPerUnit = 1368; PumpLiftingHeight = 5.5; Municipal = 2.6; Industrial = 3.9; Blowerwaterdepth = 4.5;
+      membraneAreaPerUnit = 1368; 
+      PumpLiftingHeight = 5.5; 
+      Municipal = 2.6; 
+      Industrial = 3.9; 
+      Blowerwaterdepth = 4.5;
     } else if (designedMembraneType === "USPMW-12B57-03") {
-      membraneAreaPerUnit = 684; PumpLiftingHeight = 5.5; Municipal = 1.4; Industrial = 2.1; Blowerwaterdepth = 4.5;
+      membraneAreaPerUnit = 684; 
+      PumpLiftingHeight = 5.5; 
+      Municipal = 1.4; 
+      Industrial = 2.1; 
+      Blowerwaterdepth = 4.5;
     } else if (designedMembraneType === "B420-12B6-00") {
-      membraneAreaPerUnit = 480; PumpLiftingHeight = 2.4; Municipal = 4.8; Industrial = 7.2; Blowerwaterdepth = 1.9;
+      membraneAreaPerUnit = 480; 
+      PumpLiftingHeight = 2.4; 
+      Municipal = 4.8; 
+      Industrial = 7.2; 
+      Blowerwaterdepth = 1.9;
     } else if (designedMembraneType === "B320-12B6-00") {
-      membraneAreaPerUnit = 360; PumpLiftingHeight = 2.4; Municipal = 3.6; Industrial = 5.4; Blowerwaterdepth = 1.9;
+      membraneAreaPerUnit = 360; 
+      PumpLiftingHeight = 2.4; 
+      Municipal = 3.6; 
+      Industrial = 5.4; 
+      Blowerwaterdepth = 1.9;
     } else if (designedMembraneType === "B220-12B6-00") {
-      membraneAreaPerUnit = 240; PumpLiftingHeight = 2.4; Municipal = 2.4; Industrial = 3.6; Blowerwaterdepth = 1.9;
+      membraneAreaPerUnit = 240; 
+      PumpLiftingHeight = 2.4; 
+      Municipal = 2.4; 
+      Industrial = 3.6; 
+      Blowerwaterdepth = 1.9;
     } else if (designedMembraneType === "B420-12B12-00") {
-      membraneAreaPerUnit = 960; PumpLiftingHeight = 3.5; Municipal = 4.8; Industrial = 7.2; Blowerwaterdepth = 3.1;
+      membraneAreaPerUnit = 960; 
+      PumpLiftingHeight = 3.5; 
+      Municipal = 4.8; 
+      Industrial = 7.2; 
+      Blowerwaterdepth = 3.1;
     } else if (designedMembraneType === "B320-12B12-00") {
-      membraneAreaPerUnit = 720; PumpLiftingHeight = 3.5; Municipal = 3.6; Industrial = 5.4; Blowerwaterdepth = 3.1;
+      membraneAreaPerUnit = 720; 
+      PumpLiftingHeight = 3.5; 
+      Municipal = 3.6; 
+      Industrial = 5.4; 
+      Blowerwaterdepth = 3.1;
     } else if (designedMembraneType === "B220-12B12-00") {
-      membraneAreaPerUnit = 480; PumpLiftingHeight = 3.5; Municipal = 2.4; Industrial = 3.6; Blowerwaterdepth = 3.1;
+      membraneAreaPerUnit = 480; 
+      PumpLiftingHeight = 3.5; 
+      Municipal = 2.4; 
+      Industrial = 3.6; 
+      Blowerwaterdepth = 3.1;
     }
 
     const designDutyMembraneareapertrain = membraneAreaPerUnit * noOfDutyMembraneUnitPerTrain;
@@ -120,7 +173,7 @@ const SumitomoCalculator: React.FC = () => {
     const PumpMargin = Math.ceil((PumpMaxTMP + PumpLiftingHeight + PumpPressureLoss) * 0.1);
     const PumpTotalDynamicHead = Math.ceil((PumpMaxTMP + PumpLiftingHeight + PumpPressureLoss + PumpMargin) * 100) / 100;
 
-    let RequiredAirVolume = industryType === "Municipal" ? Municipal : Industrial;
+    let RequiredAirVolume = industryType === "Municipal" ? Municipal : Industrial;  
     const TotalAirVolume = RequiredAirVolume * totalmembraneunit;
     const BlowerQuantity = TotalAirVolume / noOfDutyBlower * 1.15;
     const BlowerPressureLossofDiffuserPipe = 5;
@@ -201,7 +254,7 @@ const SumitomoCalculator: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 font-sans text-slate-900">
+    <div className="max-w-7xl mx-auto px-4 py-8 font-sans text-slate-900" id="BlufoxProjection">
       {/* Header Section */}
       <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4 border-b-2 border-slate-900 pb-6 no-print">
         <div>
@@ -323,7 +376,7 @@ const SumitomoCalculator: React.FC = () => {
         </div>
 
         {/* Results Panel */}
-        <div className="xl:col-span-8">
+        <div className="xl:col-span-8 print:my-[-30px] print:mx-[-10px]">
           {results ? (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="bg-white border-2 border-slate-900 rounded-2xl overflow-hidden shadow-2xl">

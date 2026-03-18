@@ -225,7 +225,7 @@ const MbrCalculator: React.FC = () => {
                   
                   <div className="p-2 bg-green-600 rounded text-white shadow-sm mt-1">
                     <div className="flex justify-between items-center">
-                      <span className="text-[10px] font-medium opacity-90 uppercase">Total Air (A+N)</span>
+                      <span className="text-[10px] font-medium opacity-90 uppercase">Total Air (Aeration + NH4)</span>
                       <span className="text-base font-bold">{outputs.totalAirRequired} m³/h</span>
                     </div>
                     <div className="flex justify-between items-center mt-1 pt-1 border-t border-white/20">
