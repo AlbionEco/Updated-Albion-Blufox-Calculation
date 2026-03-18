@@ -181,8 +181,7 @@ const Mbr3DLayout: React.FC = () => {
 
     // IF bf uSE THIS ELSE if sus
     if (model.startsWith('BF')) {
-      if (qty > 25) {
-        frames = Math.pow(2, Math.ceil(Math.log(qty / 25) / Math.log(2)));
+      frames = qty <= 25 ? 1 : Math.pow(2, Math.ceil(Math.log(qty / 25) / Math.log(2)));
         config = qty <= 25 ? "1 Single Skid" : (Math.ceil(frames / 2)) + " Double Skid";
         perFrame = Math.ceil(qty / frames);
         frameLength = ((perFrame + 1) * (perFrame < 25 ? 80 : 85)) + (perFrame < 25 ? 80 : 100);
@@ -201,7 +200,6 @@ const Mbr3DLayout: React.FC = () => {
 
         TankVolumeHorizontal = Math.ceil(((HorizontalTankLength / 1000) * (HorizontalTankWidth / 1000) * (TotalTankHeight / 1000)) * 100) / 100;
         TankVolumeVertical = Math.ceil(((VerticalTankLength / 1000) * (VerticalTankWidth / 1000) * (TotalTankHeight / 1000)) * 100) / 100;
-      }
 
     } else if (model.startsWith('SUS')) {
       frames = Math.ceil(qty / 40);
