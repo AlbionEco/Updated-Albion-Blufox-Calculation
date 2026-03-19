@@ -6,20 +6,25 @@ import { Printer, Calculator, Box, Droplets, Layers, Maximize, Settings2, Info }
 
 // --- Types & Constants ---
 
-const membraneData: Record<string, { area: number; height: number; width: number }> = {
-  BF100Oxy: { area: 10, height: 1000, width: 610 },
-  BF200Oxy: { area: 20, height: 1500, width: 610 },
-  BF220Oxy: { area: 22, height: 2055, width: 610 },
-  BF100N: { area: 10, height: 1000, width: 610 },
-  BF150N: { area: 15, height: 1500, width: 610 },
-  BF200N: { area: 20, height: 2000, width: 610 },
-  SUS097: { area: 9.7, height: 1300, width: 680 },
-  SUS113: { area: 11.3, height: 1500, width: 680 },
-  SUS193: { area: 19.3, height: 1300, width: 1250 },
-  SUS227: { area: 22.7, height: 1500, width: 1250 },
-  SUS313: { area: 31.3, height: 2000, width: 1250 },
-  SUS400: { area: 40, height: 2000, width: 1250 },
+const membraneData: Record<string, { area: number; height: number; width: number; length: number }> = {
+  BF100Oxy: { area: 10, height: 1000, width: 610, length: 0 },
+  BF200Oxy: { area: 20, height: 1500, width: 610, length: 0 },
+  BF220Oxy: { area: 22, height: 2055, width: 610, length: 0 },
+  BF100N: { area: 10, height: 1000, width: 610, length: 0 },
+  BF150N: { area: 15, height: 1500, width: 610, length: 0 },
+  BF200N: { area: 20, height: 2000, width: 610, length: 0 },
+  SUS097: { area: 9.7, height: 1300, width: 680, length: 0 },
+  SUS113: { area: 11.3, height: 1500, width: 680, length: 0 },
+  SUS193: { area: 19.3, height: 1300, width: 1250, length: 0 },
+  SUS227: { area: 22.7, height: 1500, width: 1250, length: 0 },
+  SUS313: { area: 31.3, height: 2000, width: 1250, length: 0 },
+  SUS400: { area: 40, height: 2000, width: 1250, length: 0 },
+  BF500D_16: { area: 16, height: 2571, width: 875, length: 1364 },
+  BF500D_32: { area: 32, height: 2571, width: 1745, length: 1364 },
+  BF500D_48: { area: 48, height: 2571, width: 1745, length: 2112 },
+  BF500S: { area: 28, height: 1838.8, width: 217, length: 355 },
 };
+
 
 // --- 3D Components ---
 
@@ -67,7 +72,7 @@ const Tank = ({ width, length, height, waterLevel }: { width: number; length: nu
       <mesh position={[0, waterLevel / 2, 0]}>
         <boxGeometry args={[width - 10, waterLevel, length - 10]} />
         <meshStandardMaterial
-          color="#3b82f6"
+          color="#3bbbf6"
           transparent
           opacity={0.3}
           roughness={0}
@@ -94,7 +99,8 @@ const MembraneFrame = ({
   height,
   membraneQty,
   label,
-  rotation = 0
+  rotation = 0,
+  model,
 }: {
   position: [number, number, number];
   width: number;
@@ -103,6 +109,7 @@ const MembraneFrame = ({
   membraneQty: number;
   label: string;
   rotation?: number;
+  model?: string;
 }) => {
   // Calculate membrane positions within frame
   const membranes = useMemo(() => {
@@ -124,19 +131,75 @@ const MembraneFrame = ({
         <meshStandardMaterial color="#4b5563" transparent opacity={0.2} />
       </mesh>
 
-      {/* Frame Edges */}
-      <mesh position={[0, height / 2, 0]}>
-        <boxGeometry args={[length, height, width]} />
-        <meshStandardMaterial color="#1f2937" wireframe />
-      </mesh>
+
+{!model?.startsWith('BF500S') && (
+  <group>
+        {/* Frame Edges (Box Pipes) */}
+        {/* Vertical Pillars */}
+        <mesh position={[-length / 2, (height + 80) /2, -width / 2]}>
+          <boxGeometry args={[40, height + 80, 40]} />
+          <meshStandardMaterial color="#ff0852" />
+        </mesh>
+        <mesh position={[length / 2, (height + 80) / 2, -width / 2]}>
+          <boxGeometry args={[40, height + 80, 40]} />
+          <meshStandardMaterial color="#ff0852" />
+        </mesh>
+        <mesh position={[-length / 2, (height + 80) / 2, width / 2]}>
+          <boxGeometry args={[40, height + 80, 40]} />
+          <meshStandardMaterial color="#ff0852" />
+        </mesh>
+        <mesh position={[length / 2, (height + 80) / 2, width / 2]}>
+          <boxGeometry args={[40, height + 80, 40]} />
+          <meshStandardMaterial color="#ff0852" />
+        </mesh>
+
+        {/* Horizontal Beams (Length) */}
+        <mesh position={[0, 20, -width / 2]}>
+          <boxGeometry args={[length, 40, 40]} />
+          <meshStandardMaterial color="#ff0852" />
+        </mesh>
+        <mesh position={[0, 20, width / 2]}>
+          <boxGeometry args={[length, 40, 40]} />
+          <meshStandardMaterial color="#ff0852" />
+        </mesh>
+        <mesh position={[0, height - 20, -width / 2]}>
+          <boxGeometry args={[length, 40, 40]} />
+          <meshStandardMaterial color="#ff0852" />
+        </mesh>
+        <mesh position={[0, height - 20, width / 2]}>
+          <boxGeometry args={[length, 40, 40]} />
+          <meshStandardMaterial color="#ff0852" />
+        </mesh>
+
+        {/* Horizontal Beams (Width) */}
+        <mesh position={[-length / 2, 20, 0]}>
+          <boxGeometry args={[40, 40, width]} />
+          <meshStandardMaterial color="#ff0852" />
+        </mesh>
+        <mesh position={[length / 2, 20, 0]}>
+          <boxGeometry args={[40, 40, width]} />
+          <meshStandardMaterial color="#ff0852" />
+        </mesh>
+        <mesh position={[-length / 2, height - 20, 0]}>
+          <boxGeometry args={[40, 40, width]} />
+          <meshStandardMaterial color="#ff0852" />
+        </mesh>
+        <mesh position={[length / 2, height - 20, 0]}>
+          <boxGeometry args={[40, 40, width]} />
+          <meshStandardMaterial color="#ff0852" />
+        </mesh>
+      </group>
+)}
+
 
       {/* Membranes */}
       {membranes.map((m, idx) => (
         <mesh key={idx} position={[m.pos[0], height / 2, 0]}>
-          <boxGeometry args={[10, height - 100, width - 40]} />
+          <boxGeometry args={[model?.startsWith('BF500S') ? length - 30 : 10, height - 100, width - 40]} />
           <meshStandardMaterial color="#10b981" roughness={0.5} />
         </mesh>
       ))}
+
 
       {/* Label */}
       <Html position={[0, height + 200, 0]} center>
@@ -167,8 +230,9 @@ const Mbr3DLayout: React.FC = () => {
     const area = data.area;
     const height = data.height;
     const width = data.width;
+    const length = data.length;
 
-    const qty = Math.ceil((capacity * 1000) / (area * flux * hours));
+    let qty = Math.ceil((capacity * 1000) / (area * flux * hours));
 
     let frames = 1;
     let config = "";
@@ -179,27 +243,26 @@ const Mbr3DLayout: React.FC = () => {
     let HorizontalTankLength = 0, HorizontalTankWidth = 0, VerticalTankLength = 0, VerticalTankWidth = 0, WaterLevelHeight = 0, TotalTankHeight = 0, TankVolumeHorizontal = 0, TankVolumeVertical = 0;
 
 
-    // IF bf uSE THIS ELSE if sus
-    if (model.startsWith('BF')) {
+    if (model.startsWith('BF') && !model.startsWith('BF500D') && !model.startsWith('BF500S')) {
       frames = qty <= 25 ? 1 : Math.pow(2, Math.ceil(Math.log(qty / 25) / Math.log(2)));
-        config = qty <= 25 ? "1 Single Skid" : (Math.ceil(frames / 2)) + " Double Skid";
-        perFrame = Math.ceil(qty / frames);
-        frameLength = ((perFrame + 1) * (perFrame < 25 ? 80 : 85)) + (perFrame < 25 ? 80 : 100);
-        frameWidth = width + (perFrame <= 25 ? 80 : 100);
-        frameHeight = height + 300;
+      config = qty <= 25 ? "1 Single Skid" : (Math.ceil(frames / 2)) + " Double Skid";
+      perFrame = Math.ceil(qty / frames);
+      frameLength = ((perFrame + 1) * (perFrame < 25 ? 80 : 85)) + (perFrame < 25 ? 80 : 100);
+      frameWidth = width + (perFrame <= 25 ? 80 : 100);
+      frameHeight = height + 300;
 
-        // Tank Dimensions
-        HorizontalTankLength = (frameLength + 100) * (frames / Math.ceil(frames / 2)) + 500;
-        HorizontalTankWidth = (frameWidth + 100) * Math.ceil(frames / 2) + 500;
+      // Tank Dimensions
+      HorizontalTankLength = (frameLength + 100) * (frames / Math.ceil(frames / 2)) + 500;
+      HorizontalTankWidth = (frameWidth + 100) * Math.ceil(frames / 2) + 500;
 
-        VerticalTankLength = ((frameWidth * frames) + ((frames - 1) * 100)) + 600;
-        VerticalTankWidth = frameLength + 600;
+      VerticalTankLength = ((frameWidth * frames) + ((frames - 1) * 150)) + 600;
+      VerticalTankWidth = frameLength + 600;
 
-        WaterLevelHeight = frameHeight + 300;
-        TotalTankHeight = WaterLevelHeight + 400;
+      WaterLevelHeight = frameHeight + 300;
+      TotalTankHeight = WaterLevelHeight + 400;
 
-        TankVolumeHorizontal = Math.ceil(((HorizontalTankLength / 1000) * (HorizontalTankWidth / 1000) * (TotalTankHeight / 1000)) * 100) / 100;
-        TankVolumeVertical = Math.ceil(((VerticalTankLength / 1000) * (VerticalTankWidth / 1000) * (TotalTankHeight / 1000)) * 100) / 100;
+      TankVolumeHorizontal = Math.ceil(((HorizontalTankLength / 1000) * (HorizontalTankWidth / 1000) * (TotalTankHeight / 1000)) * 100) / 100;
+      TankVolumeVertical = Math.ceil(((VerticalTankLength / 1000) * (VerticalTankWidth / 1000) * (TotalTankHeight / 1000)) * 100) / 100;
 
     } else if (model.startsWith('SUS')) {
       frames = Math.ceil(qty / 40);
@@ -210,10 +273,10 @@ const Mbr3DLayout: React.FC = () => {
       frameHeight = height + 300;
 
       // Tank Dimensions
-      HorizontalTankLength = (frameLength * (frames === 1 ? 1 : 2)) + (((frames === 1 ? 1 : 2) - 1) * 100) + 600;
-      HorizontalTankWidth = (frameWidth * (frames === 1 ? 1 : Math.ceil(frames / 2))) + (((frames === 1 ? 1 : Math.ceil(frames / 2)) - 1) * 100) + 600;
+      HorizontalTankLength = (frameLength * (frames === 1 ? 1 : 2)) + (((frames === 1 ? 1 : 2) - 1) * 150) + 600;
+      HorizontalTankWidth = (frameWidth * (frames === 1 ? 1 : Math.ceil(frames / 2))) + (((frames === 1 ? 1 : Math.ceil(frames / 2)) - 1) * 150) + 600;
 
-      VerticalTankLength = ((frameWidth * frames) + ((frames - 1) * 100)) + 600;
+      VerticalTankLength = ((frameWidth * frames) + ((frames - 1) * 150)) + 600;
       VerticalTankWidth = frameLength + 600;
 
       WaterLevelHeight = frameHeight + 300;
@@ -221,7 +284,74 @@ const Mbr3DLayout: React.FC = () => {
 
       TankVolumeHorizontal = Math.ceil(((HorizontalTankLength / 1000) * (HorizontalTankWidth / 1000) * (TotalTankHeight / 1000)) * 100) / 100;
       TankVolumeVertical = Math.ceil(((VerticalTankLength / 1000) * (VerticalTankWidth / 1000) * (TotalTankHeight / 1000)) * 100) / 100;
+    } else if (model.startsWith('BF500D')) {
+
+      if (model === 'BF500D_16') {
+        qty = 16;
+        frames = 1;
+        frameLength = length;
+        frameWidth = width;
+      }
+      else if (model === 'BF500D_32') {
+        qty = 32;
+        frames = 2;
+        frameLength = length / 2;
+        frameWidth = width / 2;
+      }
+      else if (model === 'BF500D_48') {
+        qty = 48;
+        frames = 2;
+        frameLength = length / 2;
+        frameWidth = width / 2;
+      }
+
+      frameHeight = height;
+      config = qty <= 16 ? "1 Single Skid" : Math.ceil((frames / 2) + 1) + " Single Skid";
+      perFrame = Math.ceil(qty / frames);
+
+      // Tank Dimensions
+      HorizontalTankLength = width + 1000;
+      HorizontalTankWidth = length + 1000;
+
+      VerticalTankLength = length + 1000;
+      VerticalTankWidth = width + 1000;
+
+      if (model === 'BF500D_16' || model === 'BF500D_32') {
+        HorizontalTankLength = length + 1000;
+        HorizontalTankWidth = width + 1000;
+
+        VerticalTankLength = width + 1000;
+        VerticalTankWidth = length + 1000;
+
+      }
+
+      WaterLevelHeight = frameHeight + 300;
+      TotalTankHeight = WaterLevelHeight + 400;
+
+      TankVolumeHorizontal = Math.ceil(((HorizontalTankLength / 1000) * (HorizontalTankWidth / 1000) * (TotalTankHeight / 1000)) * 100) / 100;
+      TankVolumeVertical = Math.ceil(((VerticalTankLength / 1000) * (VerticalTankWidth / 1000) * (TotalTankHeight / 1000)) * 100) / 100;
+    } else if (model.startsWith('BF500S')) {
+
+      frames = qty;
+      config = "";
+      perFrame = 1;
+      frameLength = length;
+      frameWidth = width;
+      frameHeight = height + 300;
+      // Tank Dimensions
+      HorizontalTankLength = ((355 * Math.ceil(Math.sqrt(qty))) + ((Math.ceil(Math.sqrt(qty)) - 1) * 100)) + 600;
+      HorizontalTankWidth = ((217 * Math.ceil(qty / Math.ceil(Math.sqrt(qty)))) + ((Math.ceil(qty / Math.ceil(Math.sqrt(qty))) - 1) * 150)) + 600;
+
+      VerticalTankLength = ((217 * Math.ceil(Math.sqrt(qty))) + ((Math.ceil(Math.sqrt(qty)) - 1) * 100)) + 600;
+      VerticalTankWidth = ((355 * Math.ceil(qty / Math.ceil(Math.sqrt(qty)))) + ((Math.ceil(qty / Math.ceil(Math.sqrt(qty))) - 1) * 150)) + 600;
+
+      WaterLevelHeight = frameHeight + 300;
+      TotalTankHeight = WaterLevelHeight + 400;
+      TankVolumeHorizontal = Math.ceil(((HorizontalTankLength / 1000) * (HorizontalTankWidth / 1000) * (TotalTankHeight / 1000)) * 100) / 100;
+      TankVolumeVertical = Math.ceil(((VerticalTankLength / 1000) * (VerticalTankWidth / 1000) * (TotalTankHeight / 1000)) * 100) / 100;
+
     }
+
 
     return {
       qty,
@@ -231,7 +361,14 @@ const Mbr3DLayout: React.FC = () => {
       frameLength,
       frameWidth,
       frameHeight,
-      HorizontalTankLength, HorizontalTankWidth, VerticalTankLength, VerticalTankWidth, WaterLevelHeight, TotalTankHeight, TankVolumeHorizontal, TankVolumeVertical,
+      HorizontalTankLength,
+      HorizontalTankWidth,
+      VerticalTankLength,
+      VerticalTankWidth,
+      WaterLevelHeight,
+      TotalTankHeight,
+      TankVolumeHorizontal,
+      TankVolumeVertical,
       area
     };
   }, [inputs]);
@@ -269,8 +406,8 @@ const Mbr3DLayout: React.FC = () => {
             </button>
           ))}
           <button type="button" onClick={() => window.print()} className="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-1.5 px-3 rounded text-[11px] transition-all flex items-center justify-center gap-2 mt-1 no-print">
-                              <Printer className="w-3 h-3" /> Print
-                            </button>
+            <Printer className="w-3 h-3" /> Print
+          </button>
         </div>
       </div>
 
@@ -307,17 +444,6 @@ const Mbr3DLayout: React.FC = () => {
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-gray-500 uppercase">Plant Capacity (KLD)</label>
-                <input
-                  type="number"
-                  name="capacity"
-                  value={inputs.capacity}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none"
-                />
-              </div>
-
-              <div className="space-y-1">
                 <label className="text-[10px] font-bold text-gray-500 uppercase">Membrane Model</label>
                 <select
                   name="model"
@@ -327,7 +453,7 @@ const Mbr3DLayout: React.FC = () => {
                 >
                   <optgroup label="BF Series">
                     {Object.keys(membraneData)
-                      .filter(m => m.startsWith('BF'))
+                      .filter(m => m.startsWith('BF') && !m.startsWith('BF500D') && !m.startsWith('BF500S'))
                       .map(m => <option key={m} value={m}>{m}</option>)}
                   </optgroup>
 
@@ -336,31 +462,57 @@ const Mbr3DLayout: React.FC = () => {
                       .filter(m => m.startsWith('SUS'))
                       .map(m => <option key={m} value={m}>{m}</option>)}
                   </optgroup>
+
+                  <optgroup label="BF500D Series">
+                    {Object.keys(membraneData)
+                      .filter(m => m.startsWith('BF500D'))
+                      .map(m => <option key={m} value={m}>{m}</option>)}
+                  </optgroup>
+
+                  <optgroup label="BF500S Series">
+                    {Object.keys(membraneData)
+                      .filter(m => m.startsWith('BF500S'))
+                      .map(m => <option key={m} value={m}>{m}</option>)}
+                  </optgroup>
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              {!inputs.model.startsWith('BF500D') && (<>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase">Flux (LMH)</label>
+                  <label className="text-[10px] font-bold text-gray-500 uppercase">Plant Capacity (KLD)</label>
                   <input
                     type="number"
-                    name="flux"
-                    value={inputs.flux}
+                    name="capacity"
+                    value={inputs.capacity}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase">Hours/Day</label>
-                  <input
-                    type="number"
-                    name="hours"
-                    value={inputs.hours}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none"
-                  />
+
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase">Flux (LMH)</label>
+                    <input
+                      type="number"
+                      name="flux"
+                      value={inputs.flux}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase">Hours/Day</label>
+                    <input
+                      type="number"
+                      name="hours"
+                      value={inputs.hours}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                    />
+                  </div>
                 </div>
-              </div>
+              </>)}
             </div>
           </section>
 
@@ -372,9 +524,15 @@ const Mbr3DLayout: React.FC = () => {
 
             <div className="grid grid-cols-1 gap-2">
               <StatItem label="Total Membranes" value={calculations.qty} unit="Nos" />
+
               <StatItem label="No. of Frames" value={calculations.frames} unit="Nos" />
-              <StatItem label="Configuration" value={calculations.config} unit="" />
-              <StatItem label="Membrane/Frame" value={calculations.perFrame} unit="Nos" />
+              {!inputs.model.startsWith('BF500S') &&
+                (
+                  <>
+                    <StatItem label="Configuration" value={calculations.config} unit="" />
+                    <StatItem label="Membrane/Frame" value={calculations.perFrame} unit="Nos" />
+                  </>
+                )}
               <StatItem label="Surface Area" value={calculations.area} unit="m²" />
             </div>
           </section>
@@ -447,29 +605,66 @@ const Mbr3DLayout: React.FC = () => {
                   let zPos = 0;
                   let rotation = 0;
 
+
                   if (placement === 'Horizontal') {
                     // Tank X is HorizontalTankWidth (uses width), Tank Z is HorizontalTankLength (uses length)
                     // Frame should have Width along X, Length along Z
                     // MembraneFrame local X is length, local Z is width. 
                     // So we rotate 90 deg (PI/2) to swap them.
-                    const framesPerRow = Math.ceil(calculations.frames / 2);
-                    const numRows = Math.ceil(calculations.frames / framesPerRow);
-                    const row = Math.floor(idx / framesPerRow);
-                    const col = idx % framesPerRow;
+                    if (inputs.model.startsWith('BF500D')) {
+                      // Special: Length beside Length (single row)
+                      const framesPerRow = calculations.frames;
+                      let col = idx;
+                      // X → Length direction
+                      xPos = (col - (framesPerRow - 1) / 2) * (calculations.frameLength + 100);
+                      // Z → center (no rows)
+                      zPos = 0;
+                      rotation = 0;
+                    } else if (inputs.model.startsWith('BF500S')) {
+                      const cols = Math.ceil(Math.sqrt(calculations.qty)); // Along Z (Length)
+                      const rows = Math.ceil(calculations.qty / cols); // Along X (Width)
+                      const row = Math.floor(idx / cols);
+                      const col = idx % cols;
 
-                    // col is along X (Width), row is along Z (Length)
-                    xPos = (col - (framesPerRow - 1) / 2) * (calculations.frameWidth + 100);
-                    zPos = (row - (numRows - 1) / 2) * (calculations.frameLength + 100);
-                    rotation = Math.PI / 2;
+                      xPos = (row - (rows - 1) / 2) * (calculations.frameWidth + 150);
+                      zPos = (col - (cols - 1) / 2) * (calculations.frameLength + 100);
+                      rotation = Math.PI / 2;
+                    } else {
+                      const framesPerRow = Math.ceil(calculations.frames / 2);
+                      const numRows = Math.ceil(calculations.frames / framesPerRow);
+                      const row = Math.floor(idx / framesPerRow);
+                      const col = idx % framesPerRow;
+
+                      // col is along X (Width), row is along Z (Length)
+                      xPos = (col - (framesPerRow - 1) / 2) * (calculations.frameWidth + 150);
+                      zPos = (row - (numRows - 1) / 2) * (calculations.frameLength + 150);
+                      rotation = Math.PI / 2;
+                    }
+
+                    if (inputs.model === ('BF500D_16')) {
+                      rotation = Math.PI / 2; // Rotate 90 degrees for BF500D_16 and BF500D_32 in vertical placement
+                    }
+
                   } else {
                     // Vertical Placement (Single Row)
                     // Tank X is VerticalTankWidth (uses length), Tank Z is VerticalTankLength (uses width)
                     // Frame should have Length along X, Width along Z
                     // MembraneFrame local X is length, local Z is width.
                     // So rotation = 0.
-                    xPos = 0;
-                    zPos = (idx - (calculations.frames - 1) / 2) * (calculations.frameWidth + 100);
-                    rotation = 0;
+                    if (inputs.model.startsWith('BF500S')) {
+                      const cols = Math.ceil(Math.sqrt(calculations.qty)); // Along Z (Width)
+                      const rows = Math.ceil(calculations.qty / cols); // Along X (Length)
+                      const row = Math.floor(idx / cols);
+                      const col = idx % cols;
+
+                      xPos = (row - (rows - 1) / 2) * (calculations.frameLength + 150);
+                      zPos = (col - (cols - 1) / 2) * (calculations.frameWidth + 100);
+                      rotation = 0;
+                    } else {
+                      xPos = 0;
+                      zPos = (idx - (calculations.frames - 1) / 2) * (calculations.frameWidth + 150);
+                      rotation = 0;
+                    }
                   }
 
                   return (
@@ -482,6 +677,7 @@ const Mbr3DLayout: React.FC = () => {
                       membraneQty={calculations.perFrame}
                       label={`Frame ${idx + 1}`}
                       rotation={rotation}
+                      model={inputs.model}
                     />
                   );
                 })}
