@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Printer, Calculator, FileText, Info, Settings } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
 
 const DosingPumpCalculator: React.FC = () => {
   const [inputs, setInputs] = useState({
@@ -94,6 +95,10 @@ const DosingPumpCalculator: React.FC = () => {
 
   return (
     <div className="max-w-5xl mx-auto">
+      <Helmet>
+              <title>Dosing Pump Calculation - Albion</title>
+              <link rel="icon" href="/Albion_Only_Logo-removebg-preview.png" />
+            </Helmet>
       <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-100">
         <div className="bg-green-600 p-4 text-white flex items-center justify-between">
           <div className="flex items-center gap-2">

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Printer, Calculator, FileText, Info, Zap } from 'lucide-react';
+import { Printer, Calculator, FileText, Info, Zap , Layers} from 'lucide-react';
 import { table } from 'console';
+import { Helmet } from 'react-helmet-async';
 
 const ProjectionCalculator: React.FC = () => {
   const [inputs, setInputs] = useState({
@@ -12,13 +13,15 @@ const ProjectionCalculator: React.FC = () => {
     workingHr: 20,
     designBase: 'with_BW',
     inlettype: 'sewagewater',
+    tankPlacement: 'Horizontal',
     NacloConcentrationOfChemical: 0,
     NaohConcentrationOfChemical: 0,
     AcidConcentrationOfChemical: 0,
   });
 
+  
   const [results, setResults] = useState<any>(null);
-
+  
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { id, value, type } = e.target;
     setInputs(prev => ({
@@ -26,10 +29,11 @@ const ProjectionCalculator: React.FC = () => {
       [id]: type === 'number' ? parseFloat(value) : value
     }));
   };
-
+  
   const calculate = () => {
-    const { module, flowRate, noOfTrain, flux, noOfMembraneTank, workingHr, designBase,
+    const { module, flowRate, flux, noOfMembraneTank, workingHr, designBase, tankPlacement,
       NacloConcentrationOfChemical, NaohConcentrationOfChemical, AcidConcentrationOfChemical } = inputs;
+      let noOfTrain = inputs.noOfTrain; // This will be updated later based on frames calculation
 
     let relaxation = 0;
     let CEBtext = "";
@@ -52,15 +56,33 @@ const ProjectionCalculator: React.FC = () => {
 
 
     let membraneSurfaceAreaPerMBR = 0;
-    const moduleMap: Record<string, number> = {
-      "BF100": 10, "BF125": 12.5, "BF200": 20, "BF300": 30,
-      "BF100N": 10, "BF150N": 15, "BF200N": 20, "BF100oxy": 10,
-      "BF220oxy": 22, "SUS100": 10, "SUS200": 20, "SUS300": 30,
-      "SUS313": 31.3, "SUS400": 40, "BF500D(430)": 40.9,
-      "BF500D(370)": 34.4, "BF500D(340)": 31.6, "BF500S": 28,
-      "12B6": 6, "12B9": 9, "12B12": 12, "12B38": 38, "12B57": 57
+    const moduleMap: Record<string, { area: number; height: number; width: number; length: number }> = {
+      "BF100": { area: 10, height: 1000, width: 610, length: 0 },
+      "BF125": { area: 12.5, height: 1250, width: 610, length: 0 },
+      "BF200": { area: 20, height: 1500, width: 610, length: 0 },
+      "BF300": { area: 30, height: 2000, width: 610, length: 0 },
+      "BF100N": { area: 10, height: 1000, width: 610, length: 0 },
+      "BF150N": { area: 15, height: 1500, width: 610, length: 0 },
+      "BF200N": { area: 20, height: 2000, width: 610, length: 0 },
+      "BF100oxy": { area: 10, height: 1000, width: 610, length: 0 },
+      "BF220oxy": { area: 22, height: 2055, width: 610, length: 0 },
+      "SUS100": { area: 10, height: 1300, width: 680, length: 0 },
+      "SUS200": { area: 20, height: 1300, width: 1250, length: 0 },
+      "SUS300": { area: 30, height: 2000, width: 1250, length: 0 },
+      "SUS313": { area: 31.3, height: 2000, width: 1250, length: 0 },
+      "SUS400": { area: 40, height: 2000, width: 1250, length: 0 },
+      "BF500D(430)": { area: 40.9, height: 2571, width: 1745, length: 2112 },
+      "BF500D(370)": { area: 34.4, height: 2571, width: 1745, length: 1364 },
+      "BF500D(340)": { area: 31.6, height: 2571, width: 875, length: 1364 },
+      "BF500S": { area: 28, height: 1838.8, width: 217, length: 355 },
+      "12B6": { area: 6, height: 1300, width: 528, length: 0 },
+      "12B9": { area: 9, height: 0, width: 0, length: 0 },
+      "12B12": { area: 12, height: 2410, width: 528, length: 0 },
+      "12B38": { area: 38, height: 2200, width: 528, length: 0 },
+      "12B57": { area: 57, height: 3220, width: 528, length: 0 }
     };
-    membraneSurfaceAreaPerMBR = moduleMap[module] || 0;
+    const moduleInfo = moduleMap[module] || { area: 0, height: 0, width: 0, length: 0 };
+    membraneSurfaceAreaPerMBR = moduleInfo.area;
 
     let TotalNumberOfModule = Math.ceil((flowRate * 1000) / (flux * workingHr * membraneSurfaceAreaPerMBR));
     if (module.startsWith("12B")) {
@@ -74,110 +96,123 @@ const ProjectionCalculator: React.FC = () => {
     const rawTimeFlux = parseFloat((flux * 83.34 / 100).toFixed(1));
     const Timeflux = parseFloat((rawTimeFlux * 0.0238).toFixed(1));
 
-    let length = 0, width = 0, height = 0, effectiveWaterDepth = 0, width2 = 0, surfaceareapertrain = 0;
+    let frames = 1;
+    let config = "";
+    let perFrame = 0;
+    let frameLength = 0;
+    let frameWidth = 0;
+    let frameHeight = 0;
+    let HorizontalTankLength = 0, HorizontalTankWidth = 0, VerticalTankLength = 0, VerticalTankWidth = 0, WaterLevelHeight = 0, TotalTankHeight = 0, TankVolumeHorizontal = 0, TankVolumeVertical = 0;
 
-    if (["BF100", "BF125", "BF100N", "BF100oxy"].includes(module)) {
-      length = ((NoofModulePerTrain + 1) * 85 + 100) / 1000;
-      width = 0.71;
-      height = 1.3;
-      effectiveWaterDepth = 1.6;
-      width2 = 2.3;
-    } else if (["BF200", "BF150N"].includes(module)) {
-      length = ((NoofModulePerTrain + 1) * 85 + 100) / 1000;
-      width = 0.71;
-      height = 1.8;
-      effectiveWaterDepth = 2.1;
-      width2 = 3;
-    } else if (module === "BF220oxy") {
-      length = ((NoofModulePerTrain + 1) * 85 + 100) / 1000;
-      width = 0.71;
-      height = 2.055;
-      effectiveWaterDepth = 2.4;
-      width2 = 3;
-    } else if (["BF300", "BF200N"].includes(module)) {
-      length = ((NoofModulePerTrain + 1) * 85 + 100) / 1000;
-      width = 0.71;
-      height = 2.3;
-      effectiveWaterDepth = 2.7;
-      width2 = 4;
-    } else if (module === "SUS100") {
-      length = ((NoofModulePerTrain * 33) + ((NoofModulePerTrain + 1) * 25) + 100) / 1000;
-      width = 0.68;
-      height = 1.85;
-      effectiveWaterDepth = 2.8;
-      width2 = 1.85;
-    } else if (module === "SUS200") {
-      length = ((NoofModulePerTrain * 33) + ((NoofModulePerTrain + 1) * 25) + 100) / 1000;
-      width = 1.25;
-      height = 1.85;
-      effectiveWaterDepth = 2.8;
-      width2 = 1.85;
-    } else if (["SUS300", "SUS400"].includes(module)) {
-      length = ((NoofModulePerTrain * 33) + ((NoofModulePerTrain + 1) * 25) + 100) / 1000;
-      width = 1.25;
-      height = 2.5;
-      effectiveWaterDepth = 3.5;
-      width2 = 2.5;
-    } else if (module === "SUS313") {
-      length = ((NoofModulePerTrain * 33) + ((NoofModulePerTrain + 1) * 25) + 100) / 1000;
-      width = 1.25;
-      height = 2.55;
-      effectiveWaterDepth = 3.55;
-      width2 = 2.55;
-    } else if (module.startsWith("BF500D")) {
-      length = Math.ceil(((NoofModulePerTrain * 49) + ((NoofModulePerTrain + 1) * 40) + 100) * 100) / 100 / 1000;
-      width = 0.844;
-      height = 2.598;
-      effectiveWaterDepth = 3.598;
-      width2 = 1.444;
-    } else if (module === "BF500S") {
-      length = Math.ceil(((NoofModulePerTrain + 1) * 85 + 100) * 100) / 100 / 1000;
-      width = 0.53;
-      height = 2.1388;
-      effectiveWaterDepth = 2.4388;
-      width2 = 3.7;
+    const mHeight = moduleInfo.height;
+    const mWidth = moduleInfo.width;
+    const mLength = moduleInfo.length;
+    if (module.startsWith('BF') && !module.startsWith('BF500D') && !module.startsWith('BF500S')) {
+      frames = NoofModulePerTrain <= 25 ? 1 : Math.pow(2, Math.ceil(Math.log(NoofModulePerTrain / 25) / Math.log(2)));
+      config = NoofModulePerTrain <= 25 ? "1 Single Skid" : (Math.ceil(frames / 2)) + " Double Skid";
+      perFrame = Math.ceil(NoofModulePerTrain / frames);
+      frameLength = ((perFrame + 1) * (perFrame < 25 ? 80 : 85)) + (perFrame < 25 ? 80 : 100);
+      frameWidth = mWidth + (perFrame <= 25 ? 80 : 100);
+      frameHeight = mHeight + 300;
+
+      HorizontalTankLength = (frameLength + 100) * (frames / Math.ceil(frames / 2)) + 500;
+      HorizontalTankWidth = (frameWidth + 100) * Math.ceil(frames / 2) + 500;
+      VerticalTankLength = ((frameWidth * frames) + ((frames - 1) * 150)) + 600;
+      VerticalTankWidth = frameLength + 600;
+      WaterLevelHeight = frameHeight + 300;
+      TotalTankHeight = WaterLevelHeight + 400;
+    } else if (module.startsWith('SUS')) {
+      frames = Math.ceil(NoofModulePerTrain / 40);
+      config = NoofModulePerTrain <= 40 ? "1 Single Skid" : Math.ceil((frames / 2) + 1) + " Single Skid";
+      perFrame = Math.ceil(NoofModulePerTrain / frames);
+      frameLength = ((perFrame * 33) + (15 * perFrame) + 100);
+      frameWidth = mWidth + 100;
+      frameHeight = mHeight + 300;
+
+      HorizontalTankLength = (frameLength * (frames === 1 ? 1 : 2)) + (((frames === 1 ? 1 : 2) - 1) * 150) + 600;
+      HorizontalTankWidth = (frameWidth * (frames === 1 ? 1 : Math.ceil(frames / 2))) + (((frames === 1 ? 1 : Math.ceil(frames / 2)) - 1) * 150) + 600;
+      VerticalTankLength = ((frameWidth * frames) + ((frames - 1) * 150)) + 600;
+      VerticalTankWidth = frameLength + 600;
+      WaterLevelHeight = mHeight + 300 + 300;
+      TotalTankHeight = WaterLevelHeight + 400;
+    } else if (module.startsWith('BF500D')) {
+      frames = NoofModulePerTrain <= 16 ? 1 : 2;
+      frameHeight = mHeight;
+      config = NoofModulePerTrain <= 16 ? "1 Single Skid" : "1 Double Skid";
+      perFrame = Math.ceil(NoofModulePerTrain / frames);
+      frameLength = mLength / (frames === 2 ? 2 : 1);
+      frameWidth = mWidth / (frames === 2 ? 2 : 1);
+
+      HorizontalTankLength = mWidth + 1000;
+      HorizontalTankWidth = mLength + 1000;
+      VerticalTankLength = mLength + 1000;
+      VerticalTankWidth = mWidth + 1000;
+
+      if (module === 'BF500D(370)' || module === 'BF500D(340)') {
+        HorizontalTankLength = mLength + 1000;
+        HorizontalTankWidth = mWidth + 1000;
+        VerticalTankLength = mWidth + 1000;
+        VerticalTankWidth = mLength + 1000;
+      }
+      WaterLevelHeight = frameHeight + 300;
+      TotalTankHeight = WaterLevelHeight + 400;
+    } else if (module === 'BF500S') {
+      frames = NoofModulePerTrain;
+      perFrame = 1;
+      frameLength = mLength;
+      frameWidth = mWidth;
+      frameHeight = mHeight + 300;
+      HorizontalTankLength = ((355 * Math.ceil(Math.sqrt(NoofModulePerTrain))) + ((Math.ceil(Math.sqrt(NoofModulePerTrain)) - 1) * 100)) + 600;
+      HorizontalTankWidth = ((217 * Math.ceil(NoofModulePerTrain / Math.ceil(Math.sqrt(NoofModulePerTrain)))) + ((Math.ceil(NoofModulePerTrain / Math.ceil(Math.sqrt(NoofModulePerTrain))) - 1) * 150)) + 600;
+      VerticalTankLength = ((217 * Math.ceil(Math.sqrt(NoofModulePerTrain))) + ((Math.ceil(Math.sqrt(NoofModulePerTrain)) - 1) * 100)) + 600;
+      VerticalTankWidth = ((355 * Math.ceil(NoofModulePerTrain / Math.ceil(Math.sqrt(NoofModulePerTrain)))) + ((Math.ceil(NoofModulePerTrain / Math.ceil(Math.sqrt(NoofModulePerTrain))) - 1) * 150)) + 600;
+      WaterLevelHeight = frameHeight + 300;
+      TotalTankHeight = WaterLevelHeight + 400;
     } else if (["12B6", "12B9", "12B12", "12B38", "12B57"].includes(module)) {
-      length = ((NoofModulePerTrain / 2) * 143) + (((NoofModulePerTrain - 1) / 2) * 25) + (NoofModulePerTrain * 5) + 90;
-      if (NoofModulePerTrain < 26) {
-        width = 0.528;
-      } else {
-        width = 0.548;
-      }
+      const l = ((NoofModulePerTrain / 2) * 143) + (((NoofModulePerTrain - 1) / 2) * 25) + (NoofModulePerTrain * 5) + 90;
+      let w = NoofModulePerTrain < 26 ? 0.528 : 0.548;
+      let h = 0;
+      let ewd = 0;
       if (module === "12B6") {
-        height = 1.3;
-        effectiveWaterDepth = 1.6; 
-        width2 = 1.6;
-      } else if (module === "12B9") {
-        height = 0;
-        effectiveWaterDepth = 0; 
-        width2 = 0;
+        h = 1.3;
+        ewd = 1.6;
       } else if (module === "12B12") {
-        height = 2.41;
-        effectiveWaterDepth = 2.71; 
-        width2 = 1.6;
+        h = 2.41;
+        ewd = 2.71;
       } else if (module === "12B38") {
-        height = 2.2;
-        effectiveWaterDepth = 2.5; 
-        width2 = 1.6;
+        h = 2.2;
+        ewd = 2.5;
       } else if (module === "12B57") {
-        height = 3.22;
-        effectiveWaterDepth = 3.52; 
-        width2 = 1.6;
+        h = 3.22;
+        ewd = 3.52;
       }
+      HorizontalTankLength = l;
+      HorizontalTankWidth = w * 1000; // converting to mm for consistency
+      VerticalTankLength = l;
+      VerticalTankWidth = w * 1000;
+      WaterLevelHeight = ewd * 1000;
+      TotalTankHeight = (h + 0.3) * 1000; // Assuming 0.3m freeboard for 12B
     }
-    surfaceareapertrain = (length + 0.6) * (width + 0.6) * (height + 0.3);
-    if (module.startsWith("SUS")) {
-      surfaceareapertrain = (length + 0.8) * (width + 0.6) * (height + 1);
+
+    TankVolumeHorizontal = Math.ceil(((HorizontalTankLength / 1000) * (HorizontalTankWidth / 1000) * (TotalTankHeight / 1000)) * 100) / 100;
+    TankVolumeVertical = Math.ceil(((VerticalTankLength / 1000) * (VerticalTankWidth / 1000) * (TotalTankHeight / 1000)) * 100) / 100;
+
+    let length_m = 0, width_m = 0, height_m = 0, effectiveWaterDepth_m = 0, width2_m = 0;
+
+    if (tankPlacement === 'Horizontal') {
+      length_m = HorizontalTankLength / 1000;
+      width_m = HorizontalTankWidth / 1000;
+    } else {
+      length_m = VerticalTankLength / 1000;
+      width_m = VerticalTankWidth / 1000;
     }
+    height_m = TotalTankHeight / 1000;
+    effectiveWaterDepth_m = WaterLevelHeight / 1000;
+    width2_m = width_m; // Using tank width as width2 for volume calculation consistency
 
-    const TotalMembraneTankVolume = parseFloat((noOfTrain * surfaceareapertrain).toFixed(1));
-console.log("noOfTrain", noOfTrain);
-console.log("surfaceareapertrain", surfaceareapertrain);
-console.log("TotalMembraneTankVolume", TotalMembraneTankVolume);
+    const TotalMembraneTankVolume = TankVolumeHorizontal; // User requested to use Horizontal Tank volume
 
-
-
-    const lengthinsidepertank = parseFloat((TotalMembraneTankVolume / effectiveWaterDepth / width2).toFixed(1));
+    const lengthinsidepertank = parseFloat((TotalMembraneTankVolume / effectiveWaterDepth_m / width_m).toFixed(1));
     let RequiredTotalFlowrateforpeakflux = 0;
     let RequiredTotalFlowrateforpeakfluxlabel = "";
 
@@ -203,6 +238,8 @@ console.log("TotalMembraneTankVolume", TotalMembraneTankVolume);
     else {
       backwash = "1";
     }
+
+
     const RequiredBackwashFlowRate = parseFloat((RequiredTotalFlowrateforpeakflux * 1.5).toFixed(1));
 
     let RequiredtotalAirFlowRate = 0;
@@ -217,6 +254,11 @@ console.log("TotalMembraneTankVolume", TotalMembraneTankVolume);
         RequiredtotalAirFlowRate = parseFloat((TotalMembraneSurfaceArea * 0.45).toFixed(1));
       }
     }
+
+    const AirFlowRatePerModule = (module.startsWith("BF") || module.startsWith("12B")) ? 5.5 : 8;
+    const TotalAirFlowRatePerTrain = parseFloat((NoofModulePerTrain * AirFlowRatePerModule * 60).toFixed(1));
+    const TotalAirFlowRate = parseFloat((TotalNumberOfModule * AirFlowRatePerModule * 60).toFixed(1));
+
 
     const RequiredtotalAirFlowRatepereach = parseFloat((RequiredtotalAirFlowRate / noOfTrain).toFixed(1));
     const BackwashNacloConcentration = 20;
@@ -315,8 +357,10 @@ console.log("TotalMembraneTankVolume", TotalMembraneTankVolume);
       TotalMembraneTankVolume,
       ModuleSize,
       lengthinsidepertank,
-      width2,
-      effectiveWaterDepth,
+      length_m,
+      width2_m,
+      height_m,
+      effectiveWaterDepth_m,
       RequiredTotalFlowrateforpeakflux,
       RequiredTotalFlowrateforpeakfluxlabel,
       filteration,
@@ -352,12 +396,29 @@ console.log("TotalMembraneTankVolume", TotalMembraneTankVolume);
       acidRequiredChemicalQuantityeachTime,
       acidChemicalSolutionInjectionTime,
       acidChemicalInjectionFlowrate,
-      AcidDosingPumpCapacity
+      AcidDosingPumpCapacity,
+      config,
+      frames,
+      frameLength,
+      frameWidth,
+      frameHeight,
+      HorizontalTankLength,
+      HorizontalTankWidth,
+      VerticalTankLength,
+      VerticalTankWidth,
+      WaterLevelHeight,
+      TotalTankHeight,
+      TankVolumeHorizontal,
+      TankVolumeVertical
     });
   };
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 font-sans text-slate-900" id="BlufoxProjection">
+       <Helmet>
+        <title>MBR Projection - Blufox</title>
+        <link rel="icon" href="/Blufox round logo only.jpg" />
+      </Helmet>
       {/* Header Section */}
       <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4 border-b-2 border-slate-900 pb-6 no-print">
         <div>
@@ -433,7 +494,7 @@ console.log("TotalMembraneTankVolume", TotalMembraneTankVolume);
 
               <div className="grid grid-cols-2 gap-4">
                 <TechnicalInput label="Flow Rate" unit="KLD" id="flowRate" value={inputs.flowRate} onChange={handleInputChange} />
-                <TechnicalInput label="No. of Train" unit="QTY" id="noOfTrain" value={inputs.noOfTrain} onChange={handleInputChange} />
+                <TechnicalInput label="No. of Train/Frame (Optional)" unit="QTY" id="noOfTrain" value={inputs.noOfTrain} onChange={handleInputChange} />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -454,6 +515,7 @@ console.log("TotalMembraneTankVolume", TotalMembraneTankVolume);
                     <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                       Inlet Water Type
                     </label>
+
 
                     <div className="flex gap-2">
                       <button
@@ -509,6 +571,21 @@ console.log("TotalMembraneTankVolume", TotalMembraneTankVolume);
                     Without B/W
                   </button>
                 </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                  <Layers className="w-3 h-3 text-blue-500" />
+                  Tank Placement
+                </label>
+                <select
+                  id="tankPlacement"
+                  value={inputs.tankPlacement}
+                  onChange={handleInputChange}
+                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                >
+                  <option value="Horizontal">Horizontal</option>
+                </select>
               </div>
 
               <button
@@ -584,7 +661,7 @@ console.log("TotalMembraneTankVolume", TotalMembraneTankVolume);
                           <TableRow label="Product Model" value={inputs.module} />
                           <TableRow label="Membrane Surface area per MBR" value={results.membraneSurfaceAreaPerMBR} unit="m²" />
                           <TableRow label="Design average daily Flow rate" value={inputs.flowRate} unit="m³/d" />
-                          <TableRow label="Number of Train" value={inputs.noOfTrain} unit="train" />
+                          <TableRow label="Number of Train/Frame" value={results.config} unit="train/Frame" />
                           <TableRow label="Number of Module per Train/Frame" value={results.NoofModulePerTrain} unit="module/train" />
                           <TableRow label="Total number of Module" value={results.TotalNumberOfModule} unit="module" highlight />
                           <TableRow label="Membrane surface area per train/Frame" value={results.MembraneSurfaceAreaPerTrain} unit="m²" />
@@ -620,9 +697,10 @@ console.log("TotalMembraneTankVolume", TotalMembraneTankVolume);
                           <TableRow label="Number of Module per Tank" value={inputs.noOfTrain} />
                           <TableRow label="Total Membrane Tank Volume (SWD)" value={results.TotalMembraneTankVolume} unit="m³" highlight />
                           <TableRow label="Module Size (H x L x W)" value={results.ModuleSize} unit="mm" />
-                          <TableRow label="Length (inside, per tank)" value={results.lengthinsidepertank} unit="m" />
-                          <TableRow label="Width (inside, per tank)" value={results.width2} unit="m" />
-                          <TableRow label="Effective water depth" value={results.effectiveWaterDepth} unit="m" />
+                          <TableRow label="Length (inside, per tank)" value={results.length_m} unit="m" />
+                          <TableRow label="Width (inside, per tank)" value={results.width2_m} unit="m" />
+                          <TableRow label="Height (Total)" value={results.height_m} unit="m" />
+                          <TableRow label="Effective water depth" value={results.effectiveWaterDepth_m} unit="m" />
                         </tbody>
                       </table>
                       {/* 3) Major equipment for Membrane */}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Printer, Calculator, FileText, Zap, Info, Table } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
 
 const SumitomoCalculator: React.FC = () => {
   const [inputs, setInputs] = useState({
@@ -255,6 +256,10 @@ const SumitomoCalculator: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 font-sans text-slate-900" id="BlufoxProjection">
+       <Helmet>
+        <title>Sumitomo Projection - Blufox</title>
+        <link rel="icon" href="/Blufox round logo only.jpg" />
+      </Helmet>
       {/* Header Section */}
       <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4 border-b-2 border-slate-900 pb-6 no-print">
         <div>

@@ -1,11 +1,7 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import AlbionLayout from './components/AlbionLayout';
 import BlufoxLayout from './components/BlufoxLayout';
+import OctopusLayout from './components/OctopusLayout';
 import LevaporeCalculator from './components/Calculators/LevaporeCalculator';
 import DosingPumpCalculator from './components/Calculators/DosingPumpCalculator';
 import MbbrCalculator from './components/Calculators/MbbrCalculator';
@@ -21,6 +17,8 @@ import SkidMaterialCalculator from './components/CalculatorsBlufox/SkidCalculato
 import ProposalGenerator from './components/CalculatorsBlufox/Proposal/ProposalGenerator.tsx';
 import Layout3D from './components/Layout3D/Layout3D';
 import Mbr3DLayout from './components/Layout3D/Mbr3DLayout';
+import OctopusProposalGenerator from './components/CalculatorsOctopus/OctopusProposalGenerator.tsx';
+import AccessoriesProposalGenerator from './components/CalculatorsOctopus/AccessoriesProposalGenerator.tsx';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const hasToken = document.cookie.includes('token=');
@@ -76,9 +74,21 @@ export default function App() {
           <Route path="/layout3d" element={
             <ProtectedRoute>
               <Layout3D />
-            </ProtectedRoute>
+            </ProtectedRoute>                                                                                                                                                                                    
           }>
             <Route index element={<Mbr3DLayout />} />
+          </Route>
+
+          {/* Octopus Flow */}
+          <Route path="/octopus" element={
+            <ProtectedRoute>
+              <OctopusLayout />
+            </ProtectedRoute>
+          }>
+            {/* Future Octopus routes can be added here */}
+             <Route index element={<Navigate to="proposal" replace />} />
+            <Route path="proposal" element={<OctopusProposalGenerator />} />
+            <Route path="accessories" element={<AccessoriesProposalGenerator />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

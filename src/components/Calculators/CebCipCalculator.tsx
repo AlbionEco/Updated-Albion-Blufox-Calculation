@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Printer, Calculator, FileText, Info } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
 
 const CebCipCalculator: React.FC = () => {
   const [inputs, setInputs] = useState({
@@ -88,6 +89,10 @@ const CebCipCalculator: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
+      <Helmet>
+              <title>CEB/CIP Calculation - Albion</title>
+              <link rel="icon" href="/Albion_Only_Logo-removebg-preview.png" />
+            </Helmet>
       <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-100">
         <div className="bg-green-600 p-4 text-white flex items-center justify-between">
           <div className="flex items-center gap-2">

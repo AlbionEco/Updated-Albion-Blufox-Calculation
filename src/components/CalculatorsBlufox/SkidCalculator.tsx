@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Printer, Calculator, FileText, Zap, Layers, Box } from 'lucide-react';
+import { Printer, Calculator, FileText, Zap, Layers, Box, Check } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
 
 const SkidCalculator: React.FC = () => {
   const [inputs, setInputs] = useState({
@@ -7,8 +8,11 @@ const SkidCalculator: React.FC = () => {
     membraneType: 'BF', // 'BF' | 'SUS'
     model: 'BF125',
     pipethickness: '40mm', // For BF Single
+    pipethickness2: '40mm', // For BF Double
     qty: 0,
     sitename: '',
+    ThickBoxPipe: true,
+    Angle: false,
   });
 
   const [results, setResults] = useState<any>(null);
@@ -37,8 +41,17 @@ const SkidCalculator: React.FC = () => {
     });
   };
 
+  const handlecheckboxchange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target;
+    setInputs(prev => ({
+      ...prev,
+      [name]: checked
+    }));
+  };
+
+
   const calculate = () => {
-    const { frameLayer, membraneType, model, pipethickness, qty, sitename } = inputs;
+    const { frameLayer, membraneType, model, pipethickness, pipethickness2, qty, sitename } = inputs;
     const numQty = Number(qty);
 
     if (frameLayer === 'single') {
@@ -50,18 +63,26 @@ const SkidCalculator: React.FC = () => {
         let flangeQty = 0;
         let threadedNippleLabel = '';
         let flangeLabel = '';
+        let angle40 = 0;
+        let angle50 = 0;
+
 
         if (pipethickness === '40mm') {
           if (model === 'BF125') {
             thickBoxpipe = ((1.2 * 4) + (0.61 * 6) + (((numQty + 1) * 0.085) + 0.08) * 6);
+            angle40 = ((1.2 * 4) + (0.61 * 6) + (((numQty + 1) * 0.085) + 0.08) * 6);
           } else if (model === 'BF200') {
             thickBoxpipe = ((1.72 * 4) + (0.61 * 6) + (((numQty + 1) * 0.085) + 0.08) * 8);
+            angle40 = ((1.72 * 4) + (0.61 * 6) + (((numQty + 1) * 0.085) + 0.08) * 8);
           } else if (model === 'BF300') {
             thickBoxpipe = ((2.22 * 4) + (0.61 * 6) + (((numQty + 1) * 0.085) + 0.08) * 8);
+            angle40 = ((2.22 * 4) + (0.61 * 6) + (((numQty + 1) * 0.085) + 0.08) * 8);
           } else if (model === 'BF100N' || model === 'BF100oxy') {
             thickBoxpipe = ((1.2 * 4) + (0.61 * 6) + (((numQty + 1) * 0.085) + 0.08) * 6);
+            angle40 = ((1.2 * 4) + (0.61 * 6) + (((numQty + 1) * 0.085) + 0.08) * 6);
           } else if (model === 'BF200N') {
             thickBoxpipe = ((1.72 * 4) + (0.61 * 6) + (((numQty + 1) * 0.085) + 0.08) * 8);
+            angle40 = ((1.72 * 4) + (0.61 * 6) + (((numQty + 1) * 0.085) + 0.08) * 8);
           }
 
           if (numQty < 10) {
@@ -77,18 +98,28 @@ const SkidCalculator: React.FC = () => {
           if (model === 'BF125') {
             thickBoxpipe = ((0.61 * 2) + (((numQty + 1) * 0.085)) * 2);
             thickBoxpipe50 = ((1.2 * 4) + (0.61 * 6) + (((numQty + 1) * 0.085)) * 6) + 0.5;
+            angle40 = ((0.61 * 2) + (((numQty + 1) * 0.085)) * 2);
+            angle50 = ((1.2 * 4) + (0.61 * 6) + (((numQty + 1) * 0.085)) * 6) + 0.5;
           } else if (model === 'BF200') {
             thickBoxpipe = ((0.61 * 2) + (((numQty + 1) * 0.085)) * 2);
             thickBoxpipe50 = ((1.72 * 4) + (0.61 * 6) + (((numQty + 1) * 0.085)) * 6) + 0.5;
+            angle40 = ((0.61 * 2) + (((numQty + 1) * 0.085)) * 2);
+            angle50 = ((1.72 * 4) + (0.61 * 6) + (((numQty + 1) * 0.085)) * 6) + 0.5;
           } else if (model === 'BF300') {
             thickBoxpipe = ((0.61 * 2) + (((numQty + 1) * 0.085)) * 2);
             thickBoxpipe50 = ((2.22 * 4) + (0.61 * 6) + (((numQty + 1) * 0.085)) * 6) + 0.5;
+            angle40 = ((0.61 * 2) + (((numQty + 1) * 0.085)) * 2);
+            angle50 = ((2.22 * 4) + (0.61 * 6) + (((numQty + 1) * 0.085)) * 6) + 0.5;
           } else if (model === 'BF100N' || model === 'BF100oxy') {
             thickBoxpipe = ((0.61 * 2) + (((numQty + 1) * 0.085)) * 2);
             thickBoxpipe50 = ((1.2 * 4) + (0.61 * 6) + (((numQty + 1) * 0.085)) * 6) + 0.5;
+            angle40 = ((0.61 * 2) + (((numQty + 1) * 0.085)) * 2);
+            angle50 = ((1.2 * 4) + (0.61 * 6) + (((numQty + 1) * 0.085)) * 6) + 0.5;
           } else if (model === 'BF200N') {
             thickBoxpipe = ((0.61 * 2) + (((numQty + 1) * 0.085)) * 2);
             thickBoxpipe50 = ((1.72 * 4) + (0.61 * 6) + (((numQty + 1) * 0.085)) * 6) + 0.5;
+            angle40 = ((0.61 * 2) + (((numQty + 1) * 0.085)) * 2);
+            angle50 = ((1.72 * 4) + (0.61 * 6) + (((numQty + 1) * 0.085)) * 6) + 0.5;
           }
 
           if (numQty < 10) {
@@ -115,7 +146,9 @@ const SkidCalculator: React.FC = () => {
           threadedNippleLabel,
           flangeQty,
           flangeLabel,
-          sitename
+          sitename,
+          angle40,
+          angle50
         });
       } else {
         // SUS Series (Single frame)
@@ -218,6 +251,10 @@ const SkidCalculator: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 font-sans text-slate-900">
+      <Helmet>
+        <title>Skid Calculation - Blufox</title>
+        <link rel="icon" href="/Blufox round logo only.jpg" />
+      </Helmet>
       {/* Header Section */}
       <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4 border-b-2 border-slate-900 pb-6 no-print">
         <div>
@@ -251,24 +288,24 @@ const SkidCalculator: React.FC = () => {
                   <Layers className="w-3 h-3" /> MBR Frame Layer
                 </label>
                 <div className="grid grid-cols-2 gap-2">
-                   <button
-  onClick={() =>
-    setInputs((prev: any) => ({
-      ...prev,
-      frameLayer: "single",
-    }))
-  }
+                  <button
+                    onClick={() =>
+                      setInputs((prev: any) => ({
+                        ...prev,
+                        frameLayer: "single",
+                      }))
+                    }
                     className={`py-2 px-4 rounded-lg text-sm font-bold transition-all border ${inputs.frameLayer === 'single' ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-white border-slate-200 text-slate-600 hover:border-blue-400'}`}
                   >
                     Single
                   </button>
                   <button
-  onClick={() =>
-    setInputs((prev: any) => ({
-      ...prev,
-      frameLayer: "double",
-    }))
-  }
+                    onClick={() =>
+                      setInputs((prev: any) => ({
+                        ...prev,
+                        frameLayer: "double",
+                      }))
+                    }
                     className={`py-2 px-4 rounded-lg text-sm font-bold transition-all border ${inputs.frameLayer === 'double' ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-white border-slate-200 text-slate-600 hover:border-blue-400'}`}
                   >
                     Double
@@ -291,6 +328,7 @@ const SkidCalculator: React.FC = () => {
                   </select>
                 </div>
               )}
+
 
               {/* Model Selection */}
               <div className="space-y-3">
@@ -330,36 +368,102 @@ const SkidCalculator: React.FC = () => {
                 </select>
               </div>
 
-              {/* Pipe Thickness (Only for BF Single) */}
-              {inputs.frameLayer === 'single' && inputs.membraneType === 'BF' && (
-                <div className="space-y-3">
-                  <label className="text-[12px] font-bold text-slate-400 uppercase tracking-wider">Thickness of box pipe</label>
-                  <div className="space-y-2">
-                    <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${inputs.pipethickness === '40mm' ? 'bg-blue-50 border-blue-500' : 'bg-white border-slate-200 hover:border-blue-300'}`}>
+              <div className="grid grid-cols-2 gap-4">
+                <>
+                  {/* check box Box pipe and Angle */}
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all bg-blue-50 border-blue-500">
                       <input
-                        type="radio"
-                        name="pipethickness"
-                        value="40mm"
-                        checked={inputs.pipethickness === '40mm'}
-                        onChange={handleInputChange}
+                        type="checkbox"
+                        name="ThickBoxPipe"
+                        checked={inputs.ThickBoxPipe}
+                        onChange={handlecheckboxchange}
                         className="w-4 h-4 text-blue-600"
                       />
-                      <span className="text-xs font-medium text-slate-700">40mm x 40mm x 2mm</span>
-                    </label>
-                    <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${inputs.pipethickness === '50mm' ? 'bg-blue-50 border-blue-500' : 'bg-white border-slate-200 hover:border-blue-300'}`}>
-                      <input
-                        type="radio"
-                        name="pipethickness"
-                        value="50mm"
-                        checked={inputs.pipethickness === '50mm'}
-                        onChange={handleInputChange}
-                        className="w-4 h-4 text-blue-600"
-                      />
-                      <span className="text-xs font-medium text-slate-700">50mm x 50mm x 2mm</span>
+                      <span className="text-xs font-medium text-slate-700">Thick Box Pipe</span>
                     </label>
                   </div>
-                </div>
-              )}
+
+                  {/* check box Box pipe and Angle */}
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all bg-blue-50 border-blue-500">
+                      <input
+                        type="checkbox"
+                        name="Angle"
+                        onChange={handlecheckboxchange}
+                        className="w-4 h-4 text-blue-600"
+                      />
+                      <span className="text-xs font-medium text-slate-700">Angle</span>
+                    </label>
+                  </div>
+
+                </>
+                <>
+
+                  {/* Pipe Thickness (Only for BF Single) */}
+                  {inputs.frameLayer === 'single' && inputs.membraneType === 'BF' && inputs.ThickBoxPipe === true && (
+                    <div className="space-y-3">
+                      <label className="text-[12px] font-bold text-slate-400 uppercase tracking-wider">Thickness of box pipe</label>
+                      <div className="space-y-2">
+                        <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${inputs.pipethickness === '40mm' ? 'bg-blue-50 border-blue-500' : 'bg-white border-slate-200 hover:border-blue-300'}`}>
+                          <input
+                            type="radio"
+                            name="pipethickness"
+                            value="40mm"
+                            checked={inputs.pipethickness === '40mm'}
+                            onChange={handleInputChange}
+                            className="w-4 h-4 text-blue-600"
+                          />
+                          <span className="text-xs font-medium text-slate-700">40mm x 40mm x 2mm</span>
+                        </label>
+                        <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${inputs.pipethickness === '50mm' ? 'bg-blue-50 border-blue-500' : 'bg-white border-slate-200 hover:border-blue-300'}`}>
+                          <input
+                            type="radio"
+                            name="pipethickness"
+                            value="50mm"
+                            checked={inputs.pipethickness === '50mm'}
+                            onChange={handleInputChange}
+                            className="w-4 h-4 text-blue-600"
+                          />
+                          <span className="text-xs font-medium text-slate-700">50mm x 50mm x 2mm</span>
+                        </label>
+                      </div>
+                    </div>
+                  )}
+
+
+                  {/* Pipe Thickness (Only for BF Single) */}
+                  {inputs.frameLayer === 'single' && inputs.membraneType === 'BF' && inputs.Angle === true && (
+                    <div className="space-y-3">
+                      <label className="text-[12px] font-bold text-slate-400 uppercase tracking-wider">Angle</label>
+                      <div className="space-y-2">
+                        <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${inputs.pipethickness2 === '40mm' ? 'bg-blue-50 border-blue-500' : 'bg-white border-slate-200 hover:border-blue-300'}`}>
+                          <input
+                            type="radio"
+                            name="pipethickness2"
+                            value="40mm"
+                            checked={inputs.pipethickness2 === '40mm'}
+                            onChange={handleInputChange}
+                            className="w-4 h-4 text-blue-600"
+                          />
+                          <span className="text-xs font-medium text-slate-700">40mm x 40mm x 5/6mm</span>
+                        </label>
+                        <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${inputs.pipethickness2 === '50mm' ? 'bg-blue-50 border-blue-500' : 'bg-white border-slate-200 hover:border-blue-300'}`}>
+                          <input
+                            type="radio"
+                            name="pipethickness2"
+                            value="50mm"
+                            checked={inputs.pipethickness2 === '50mm'}
+                            onChange={handleInputChange}
+                            className="w-4 h-4 text-blue-600"
+                          />
+                          <span className="text-xs font-medium text-slate-700">50mm x 50mm x 5/6mm</span>
+                        </label>
+                      </div>
+                    </div>
+                  )}
+                </>
+              </div>
 
               {/* Quantity */}
               <div className="space-y-3">
@@ -416,8 +520,8 @@ const SkidCalculator: React.FC = () => {
                 <div className="bg-white">
                   {/* Company Header */}
                   <div className="px-6 py-5 bg-blue-50 border-b-2 border-slate-900">
-                  <div className="flex justify-between items-start mb-8 border-b-2 border-slate-100 ">
-                    <div className="space-y-1">
+                    <div className="flex justify-between items-start mb-8 border-b-2 border-slate-100 ">
+                      <div className="space-y-1">
                         <h2 className="text-2xl font-black text-slate-900 tracking-tighter">Blufox Ecoventures LLP</h2>
                         <p className="text-[11px] text-slate-600 max-w-md leading-relaxed font-medium">
                           1908, The Junomoneta Tower, Beside Rajhans Multiplex,
@@ -433,16 +537,16 @@ const SkidCalculator: React.FC = () => {
                           <span> <a href="tel:+919099022279"> +91 90990 22279</a></span>
                         </div>
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Material: SS 304 Unpolished</p>
-                    </div>
-                    <div className="text-right">
-                      <img src="/bluefox-logo-with-tagline.png" alt="blufox logo" className="h-12 w-auto mb-2" referrerPolicy="no-referrer" />
-                      {results.sitename && (
-                        <div className="mt-4 p-2 bg-blue-50 rounded border border-blue-100 inline-block">
-                          <p className="text-[10px] uppercase font-bold text-blue-600 tracking-widest mb-1">Project Name</p>
-                          <p className="text-sm font-black text-slate-800">{results.sitename}</p>
-                        </div>
+                      </div>
+                      <div className="text-right">
+                        <img src="/bluefox-logo-with-tagline.png" alt="blufox logo" className="h-12 w-auto mb-2" referrerPolicy="no-referrer" />
+                        {results.sitename && (
+                          <div className="mt-4 p-2 bg-blue-50 rounded border border-blue-100 inline-block">
+                            <p className="text-[10px] uppercase font-bold text-blue-600 tracking-widest mb-1">Project Name</p>
+                            <p className="text-sm font-black text-slate-800">{results.sitename}</p>
+                          </div>
                         )}
-                  </div>
+                      </div>
                     </div>
                   </div>
 
@@ -458,14 +562,20 @@ const SkidCalculator: React.FC = () => {
                       <tbody className="divide-y divide-slate-100">
                         <TableRow label="Membrane Model" value={results.model} />
                         <TableRow label="Membrane Qty" value={results.qty} unit="Nos." />
-
-                        {results.type === 'BF_SINGLE' && (
+                        {results.type === 'BF_SINGLE' && inputs.ThickBoxPipe === true && (
                           <>
                             <TableRow label='1/2" Nipple Qty (1.25" long)' value={results.nippleQty} unit="Nos." />
-                            {results.thickBoxpipe50 > 0 && (
-                              <TableRow label="50mm x 50mm x 2mm Thick Box Pipe" value={results.thickBoxpipe50.toFixed(2)} unit="mtr" highlight />
+                            {inputs.pipethickness === '50mm' && (
+                              <TableRow label="50mm x 50mm x 2mm Thick Box Pipe" value={inputs.Angle === true ? (results.thickBoxpipe50.toFixed(2)) / 2 : results.thickBoxpipe50.toFixed(2)} unit="mtr" highlight />
                             )}
-                            <TableRow label="40mm x 40mm x 2mm Thick Box Pipe" value={results.thickBoxpipe.toFixed(2)} unit="mtr" highlight />
+                            <TableRow label="40mm x 40mm x 2mm Thick Box Pipe" value={inputs.Angle === true ? (results.thickBoxpipe.toFixed(2)) / 2 : results.thickBoxpipe.toFixed(2)} unit="mtr" highlight />
+                            {results.type === 'BF_SINGLE' && inputs.Angle === true && (<>
+                              {inputs.pipethickness2 === '50mm' && (
+                                <TableRow label="50mm x 50mm x 5/6mm Angle" value={inputs.ThickBoxPipe === true ? (results.angle50.toFixed(2)) / 2 : results.angle50.toFixed(2)} unit="mtr" highlight />
+                              )}
+                              <TableRow label="40mm x 40mm x 5/6mm Angle" value={inputs.ThickBoxPipe === true ? (results.angle40.toFixed(2)) / 2 : results.angle40.toFixed(2)} unit="mtr" highlight />
+                            </>
+                            )}
                             <TableRow label={results.threadedNippleLabel} value={results.threadedNippleQty} unit="Nos." />
                             <TableRow label={results.flangeLabel} value={results.flangeQty} unit="Nos." />
                           </>

@@ -42,6 +42,19 @@ const TopBrandNav: React.FC = () => {
           >
             <span className="text-sm tracking-widest uppercase">3D Layout</span>
           </NavLink>
+
+          <NavLink
+            to="/octopus"
+            className={({ isActive }) =>
+              `flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 ${
+                isActive
+                  ? 'bg-[#20b3c4]-50 text-[#20b3c4] font-bold shadow-sm'
+                  : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+              }`
+            }
+          >
+            <span className="text-sm tracking-widest uppercase">Octopus</span>
+          </NavLink>
         </div>
       </div>
     </div>

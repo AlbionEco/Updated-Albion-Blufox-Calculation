@@ -6,6 +6,7 @@ import { generateSUSProposal, generateSUSWordProposal } from './sus_proposal';
 import { generate500SProposal, generate500SWordProposal } from './500s_proposal';
 import { generate500DProposal, generate500DWordProposal } from './500d_proposal';
 import { generateSumitomoProposal, generateSumitomoWordProposal } from './sumitomo_proposal';
+import { Helmet } from 'react-helmet-async';
 
 const ProposalGenerator: React.FC = () => {
   const [inputs, setInputs] = useState({
@@ -137,6 +138,10 @@ const ProposalGenerator: React.FC = () => {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 font-sans text-slate-900">
+      <Helmet>
+        <title>Proposal Generator - Blufox</title>
+        <link rel="icon" href="/Blufox round logo only.jpg" />
+      </Helmet>
       {/* Header Section */}
       <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4 border-b-2 border-slate-900 pb-6 no-print">
         <div>
