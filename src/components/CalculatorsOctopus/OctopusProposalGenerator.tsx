@@ -10,6 +10,7 @@ const OctopusProposalGenerator: React.FC = () => {
     date: new Date().toISOString().split('T')[0],
     special_Terms: '',
     selectedPools: ['mainPool'],
+    selectedFilter: 'filter',
     mainPoolLength: '',
     mainPoolWidth: '',
     mainPoolDepth: '',
@@ -29,7 +30,6 @@ const OctopusProposalGenerator: React.FC = () => {
     poolLadderUnits_steps: '',
     poolLightingUnits: '1',
     cascadeUnits: '1',
-    pipelessUnits: '1',
     poolLightingUnits_watt: "",
     roboticCleanerUnits: '1',
     uvSterilizerUnits: '1',
@@ -48,10 +48,10 @@ const OctopusProposalGenerator: React.FC = () => {
 
   // Calculation Logic (Immediate UI Feedback)
   useEffect(() => {
-    const { 
-      mainPoolLength, mainPoolWidth, mainPoolDepth, 
+    const {
+      mainPoolLength, mainPoolWidth, mainPoolDepth,
       babyPoolLength, babyPoolWidth, babyPoolDepth,
-      selectedPools 
+      selectedPools,
     } = inputs;
 
     let totalVolume = 0;
@@ -78,9 +78,9 @@ const OctopusProposalGenerator: React.FC = () => {
       setInputs(prev => ({ ...prev, poolVolume: totalVolume.toString() }));
     }
   }, [
-    inputs.mainPoolLength, inputs.mainPoolWidth, inputs.mainPoolDepth, 
+    inputs.mainPoolLength, inputs.mainPoolWidth, inputs.mainPoolDepth,
     inputs.babyPoolLength, inputs.babyPoolWidth, inputs.babyPoolDepth,
-    inputs.selectedPools
+    inputs.selectedPools,
   ]);
 
   // handle proper checkbox change for pool type
@@ -91,6 +91,11 @@ const OctopusProposalGenerator: React.FC = () => {
         : [...prev.selectedPools, pool];
       return { ...prev, selectedPools };
     });
+  };
+
+  const handleFilterTypeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    setInputs(prev => ({ ...prev, selectedFilter: value }));
   };
 
   // handle proper radio button change for media type
@@ -234,63 +239,64 @@ const OctopusProposalGenerator: React.FC = () => {
               </div>
 
               <div className="space-y-6">
-                <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
-                  <div className="w-1.5 h-4 bg-[#20b3c4] rounded-full"></div>
-                  <h4 className="text-sm font-black uppercase tracking-widest text-slate-900">Technical Specs</h4>
-                </div>
-                <div className="grid grid-cols-1 gap-6">
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Media Type</label>
-                    <div className="grid grid-cols-2 gap-3">
-                      <label className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all cursor-pointer ${inputs.mediaType === 'AFMMedia' ? 'border-[#20b3c4] bg-[#20b3c4]/5 text-[#20b3c4]' : 'border-slate-100 hover:border-slate-200 text-slate-600'}`}>
-                        <input type="radio" name="mediaType" value="AFMMedia" checked={inputs.mediaType === 'AFMMedia'} onChange={handlemediaTypeChange} className="hidden" />
-                        <span className="text-xs font-bold uppercase">AFM Media</span>
-                      </label>
-                      <label className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all cursor-pointer ${inputs.mediaType === 'SandMedia' ? 'border-[#20b3c4] bg-[#20b3c4]/5 text-[#20b3c4]' : 'border-slate-100 hover:border-slate-200 text-slate-600'}`}>
-                        <input type="radio" name="mediaType" value="SandMedia" checked={inputs.mediaType === 'SandMedia'} onChange={handlemediaTypeChange} className="hidden" />
-                        <span className="text-xs font-bold uppercase">Sand Media</span>
-                      </label>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Flow Rate (LPH)</label>
-                      <input
-                        type='number'
-                        id="flowRate"
-                        value={inputs.flowRate}
-                        onChange={handleInputChange}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#20b3c4]/20 focus:border-[#20b3c4] outline-none transition-all"
-                        placeholder="Auto-calculated"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Work Hours</label>
-                      <input
-                        type="number"
-                        id="workHours"
-                        value={inputs.workHours}
-                        onChange={handleInputChange}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#20b3c4]/20 focus:border-[#20b3c4] outline-none transition-all"
-                        placeholder="Cycle hours"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Special Terms</label>
-                    <textarea
-                      id="special_Terms"
-                      value={inputs.special_Terms}
-                      onChange={handleInputChange}
-                      rows={3}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#20b3c4]/20 focus:border-[#20b3c4] outline-none transition-all resize-none"
-                      placeholder="Enter specific terms or conditions..."
-                    />
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Filter Type</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <label className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all cursor-pointer ${inputs.selectedFilter === 'filter' ? 'border-[#20b3c4] bg-[#20b3c4]/5 text-[#20b3c4]' : 'border-slate-100 hover:border-slate-200 text-slate-600'}`}>
+                      <input type="radio" name="selectedFilter" value="filter" checked={inputs.selectedFilter === 'filter'} onChange={handleFilterTypeChange} className="hidden" />
+                      <span className="text-xs font-bold uppercase">Pool Filter</span>
+                    </label>
+                    <label className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all cursor-pointer ${inputs.selectedFilter === 'pipelessfilter' ? 'border-[#20b3c4] bg-[#20b3c4]/5 text-[#20b3c4]' : 'border-slate-100 hover:border-slate-200 text-slate-600'}`}>
+                      <input type="radio" name="selectedFilter" value="pipelessfilter" checked={inputs.selectedFilter === 'pipelessfilter'} onChange={handleFilterTypeChange} className="hidden" />
+                      <span className="text-xs font-bold uppercase">Pipeless Pool Filter</span>
+                    </label>
                   </div>
                 </div>
               </div>
+
+              {inputs.selectedFilter === 'filter' && (
+                <div className="space-y-3 bg-gray-100 p-3 rounded-lg">
+                  <div className="grid grid-cols-1 gap-6">
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Media Type</label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <label className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all cursor-pointer ${inputs.mediaType === 'AFMMedia' ? 'border-[#20b3c4] bg-[#20b3c4]/5 text-[#20b3c4]' : 'border-slate-100 hover:border-slate-200 text-slate-600'}`}>
+                          <input type="radio" name="mediaType" value="AFMMedia" checked={inputs.mediaType === 'AFMMedia'} onChange={handlemediaTypeChange} className="hidden" />
+                          <span className="text-xs font-bold uppercase">AFM Media</span>
+                        </label>
+                        <label className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all cursor-pointer ${inputs.mediaType === 'SandMedia' ? 'border-[#20b3c4] bg-[#20b3c4]/5 text-[#20b3c4]' : 'border-slate-100 hover:border-slate-200 text-slate-600'}`}>
+                          <input type="radio" name="mediaType" value="SandMedia" checked={inputs.mediaType === 'SandMedia'} onChange={handlemediaTypeChange} className="hidden" />
+                          <span className="text-xs font-bold uppercase">Sand Media</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Flow Rate (LPH)</label>
+                        <input
+                          type='number'
+                          id="flowRate"
+                          value={inputs.flowRate}
+                          onChange={handleInputChange}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#20b3c4]/20 focus:border-[#20b3c4] outline-none transition-all"
+                          placeholder="Auto-calculated"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Work Hours</label>
+                        <input
+                          type="number"
+                          id="workHours"
+                          value={inputs.workHours}
+                          onChange={handleInputChange}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#20b3c4]/20 focus:border-[#20b3c4] outline-none transition-all"
+                          placeholder="Cycle hours"
+                        />
+                      </div>
+                    </div>
             </div>
 
             {/* Right Column: Pool Specs & Accessories */}
@@ -386,6 +392,18 @@ const OctopusProposalGenerator: React.FC = () => {
                       </div>
                     </div>
                   )}
+
+                  <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Special Terms</label>
+                      <textarea
+                        id="special_Terms"
+                        value={inputs.special_Terms}
+                        onChange={handleInputChange}
+                        rows={3}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#20b3c4]/20 focus:border-[#20b3c4] outline-none transition-all resize-none"
+                        placeholder="Enter specific terms or conditions..."
+                      />
+                    </div>
                 </div>
               </div>
 
@@ -394,7 +412,7 @@ const OctopusProposalGenerator: React.FC = () => {
           </div>
 
           {/* Accessories Section */}
-          <div className="bg-white rounded-3xl p-8 shadow-sm border border-blue-100/50">
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-blue-100/50">
             <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-6 flex items-center gap-2">
               <PlusCircle size={14} /> Optional Accessories
             </h3>
@@ -420,11 +438,6 @@ const OctopusProposalGenerator: React.FC = () => {
                     unitsKey: "cascadeUnits"
                   },
                   {
-                    id: "PipelessPoolFiltrationSystem",
-                    label: "Pipeless System",
-                    unitsKey: "pipelessUnits",
-                  },
-                  {
                     id: "RoboticPoolCleaner",
                     label: "Robotic Pool Cleaner",
                     unitsKey: "roboticCleanerUnits",
@@ -443,9 +456,9 @@ const OctopusProposalGenerator: React.FC = () => {
               ).map((acc) => (
                 <div
                   key={acc.id}
-                  className={`p-4 rounded-2xl border transition-all flex items-center justify-between ${inputs.accessories.includes(acc.id)
-                    ? "bg-blue-50 border-blue-200 ring-1 ring-blue-200"
-                    : "bg-gray-50 border-gray-100 hover:border-gray-200"
+                  className={`px-4 py-2 rounded-2xl border transition-all flex items-center justify-between ${inputs.accessories.includes(acc.id)
+                    ? "bg-blue-50 border-[#20b3c4]/20 ring-1 ring-[#20b3c4]/20"
+                    : "bg-white border border-white "
                     }`}
                 >
                   <div
@@ -455,8 +468,8 @@ const OctopusProposalGenerator: React.FC = () => {
                     <button
                       type="button"
                       className={`w-6 h-6 rounded-lg flex items-center justify-center transition-colors ${inputs.accessories.includes(acc.id)
-                        ? "bg-blue-600 text-white"
-                        : "bg-white border border-gray-300 group-hover:border-blue-300"
+                        ? "bg-[#20b3c4] text-white"
+                        : "bg-white border border-gray-300 group-hover:border-[#20b3c4]/40"
                         }`}
                     >
                       {inputs.accessories.includes(acc.id) && (
@@ -465,8 +478,8 @@ const OctopusProposalGenerator: React.FC = () => {
                     </button>
                     <span
                       className={`font-medium transition-colors ${inputs.accessories.includes(acc.id)
-                        ? "text-blue-900"
-                        : "text-gray-700 group-hover:text-blue-600"
+                        ? "text-black"
+                        : "text-gray-700 group-hover:text-[#20b3c4]"
                         }`}
                     >
                       {acc.label}
@@ -476,7 +489,7 @@ const OctopusProposalGenerator: React.FC = () => {
                   {inputs.accessories.includes(acc.id) && (
                     <div className="flex items-center gap-2">
 
-                      <span className="text-xs text-blue-600 font-bold uppercase">
+                      <span className="text-xs text-[#20b3c4] font-bold uppercase">
                         Units:
                       </span>
                       {/* Units Input */}
@@ -486,7 +499,7 @@ const OctopusProposalGenerator: React.FC = () => {
                         value={inputs[acc.unitsKey]}
                         onChange={handleInputChange}
                         placeholder="Qty"
-                        className="w-16 px-2 py-1 bg-white border border-blue-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-16 px-2 py-1 bg-white border border-[#20b3c4]/20 rounded-lg text-sm focus:ring-2 focus:ring-[#20b3c4]/20 outline-none"
                       />
 
                       {/* Watt or Steps Dropdown (only if exists) */}
@@ -495,7 +508,7 @@ const OctopusProposalGenerator: React.FC = () => {
                           name={`${acc.unitsKey}_watt`}
                           value={inputs[`${acc.unitsKey}_watt`] || ""}
                           onChange={handleInputChange}
-                          className="px-2 py-1 bg-white border border-blue-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                          className="px-2 py-1 bg-white border border-[#20b3c4]/20 rounded-lg text-sm focus:ring-2 focus:ring-[#20b3c4]/50 outline-none"
                         >
                           <option value="">Select W</option>
                           {acc.WhattOptions.map((option) => (

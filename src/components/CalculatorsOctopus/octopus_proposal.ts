@@ -235,6 +235,7 @@ export interface OctopusProposalInputs {
   date: string;
   special_Terms: string;
   selectedPools: string[];
+  selectedFilter: string;
   mainPoolLength: string;
   mainPoolWidth: string;
   mainPoolDepth: string;
@@ -255,7 +256,6 @@ export interface OctopusProposalInputs {
   poolLightingUnits: string;
   poolLightingUnits_watt: string;
   cascadeUnits: string;
-  pipelessUnits: string;
   roboticCleanerUnits: string;
   uvSterilizerUnits: string;
   saltChlorinatorUnits: string;
@@ -274,6 +274,7 @@ export async function generateOctopusWordProposal(
       special_Terms,
       poolVolume: rawpoolVolume,
       selectedPools = ["mainPool"],
+      selectedFilter,
       mainPoolLength = "0",
       mainPoolWidth = "0",
       mainPoolDepth = "0",
@@ -289,10 +290,11 @@ export async function generateOctopusWordProposal(
       poolLightingUnits = "1",
       poolLightingUnits_watt = "",
       cascadeUnits = "1",
-      pipelessUnits = "1",
       roboticCleanerUnits = "1",
       uvSterilizerUnits = "1",
       saltChlorinatorUnits = "1",
+        gutterLength = "0",
+        gutterWidth = "0",
     } = inputs;
 
     const poolVolume = parseFloat(rawpoolVolume) || 0;
@@ -342,14 +344,6 @@ export async function generateOctopusWordProposal(
         unit: 12000,
       });
     }
-    if (accessories.includes("PipelessPoolFiltrationSystem")) {
-      const qty = parseInt(pipelessUnits) || 1;
-      accessoryItems.push({
-        name: "Pipeless Filtration System",
-        qty,
-        unit: 145000,
-      });
-    }
 
     if (accessories.includes("RoboticPoolCleaner")) {
       const qty = parseInt(roboticCleanerUnits) || 1;
@@ -392,6 +386,14 @@ export async function generateOctopusWordProposal(
       "/Octopus Images/Top Mounted Pool Filter.jpg",
     );
 
+    const SideMountedPoolFilterImg = await loadImage(
+      "/Octopus Images/Side Mounted Pool Filter.jpg",
+    );
+
+    const CommercialPoolFilterImg = await loadImage(
+      "/Octopus Images/Commercial Pool Filter.jpg",
+    );
+
     const RoboticPoolCleanerImg = await loadImage(
       "/Octopus Images/Robotic Pool Cleaner.jpg",
     );
@@ -426,6 +428,10 @@ export async function generateOctopusWordProposal(
     );
     const AFMMediaImg = await loadImage("/Octopus Images/AFM Media.jpg");
     const SandMediaImg = await loadImage("/Octopus Images/Sand Media.jpg");
+
+    const OverflowGratingImg = await loadImage(
+      "/Octopus Images/Overflow Grading.jpg",
+    );
 
     setProgress(40, "Creating Document Content...");
 
@@ -508,7 +514,7 @@ export async function generateOctopusWordProposal(
                     }),
                   ],
                   indent: { left: -1200, right: -1200 },
-                   spacing: { before: 0, after: 0 },
+                  spacing: { before: 0, after: 0 },
                 }),
               ],
             }),
@@ -585,6 +591,7 @@ export async function generateOctopusWordProposal(
                   }),
                 ]
               : []),
+
             new docx.Paragraph({
               children: [
                 new docx.TextRun({
@@ -612,10 +619,14 @@ export async function generateOctopusWordProposal(
                       }),
                   ),
                 }),
+
+
                 ...[
+                  ...(selectedFilter === "filter"
+                    ?[
                   {
                     no: "1",
-                    img: TopMountedPoolFilterImg,
+                    img: `${selectedFilter === "filter" ? TopMountedPoolFilterImg : PoolPipelessFilterImg}`,
                     item: "Filter",
                     units: "1 Nos.",
                     spec: [`${row.filterDia}mm Filter`, `Make: Octopus`],
@@ -629,20 +640,26 @@ export async function generateOctopusWordProposal(
                   },
                   {
                     no: "3",
-                    img: `${mediaType === "AFMMedia" ? AFMMediaImg : SandMediaImg}`,
+                    img: mediaType === "AFMMedia" ? AFMMediaImg : SandMediaImg,
                     item: "Media",
                     units: `${row.mediaQty} kg`,
-                    spec: `${mediaType === "AFMMedia" ? "AFM" : "Sand"}  Media`,
+                    spec: `${mediaType === "AFMMedia" ? "AFM" : "Sand"} Media`,
                   },
                   {
                     no: "4",
                     img:
                       layoutType === "Skimmer"
                         ? PoolSkimmerImg
-                        : FilterWaterOutletImg,
+                        : OverflowGratingImg,
                     item: "Fittings",
                     units: "1 Set",
-                    spec: `Inlets, Drains, ${layoutType}`,
+                    spec: layoutType === "Skimmer"
+                      ? [layoutType + " Ultrawide"]
+                      : [
+                          layoutType + " Type",
+                          "Gutter Length (m): " + gutterLength,
+                          "Gutter Width (in): " + gutterWidth,
+                        ],
                   },
                   {
                     no: "5",
@@ -672,23 +689,23 @@ export async function generateOctopusWordProposal(
                     img: PoolDisinfectionChemicalImg,
                     item: "Pool Disinfection Chemical",
                     units: "50 kg",
-                    spec: "Standard Scope",
+                    spec: " ",
                   },
                   ...accessoryItems.map((item, idx) => {
                     let accImg = null;
                     if (item.name.includes("Ladder")) accImg = PoolLadderImg;
                     if (item.name.includes("Light")) accImg = PoolLightsImg;
                     if (item.name.includes("Cascade")) accImg = CascadeImg;
-                    if (item.name.includes("Pipeless"))
-                      accImg = PoolPipelessFilterImg;
                     if (item.name.includes("Robotic"))
                       accImg = RoboticPoolCleanerImg;
                     if (item.name.includes("UV Sterilizer"))
                       accImg = uvSterilizerImg;
                     if (item.name.includes("Salt Chlorinator"))
                       accImg = saltChlorinatorImg;
+                    if (item.name.includes("Skimmer")) accImg = PoolSkimmerImg;
+
                     return {
-                      no: (6 + idx).toString(),
+                      no: (8 + idx).toString(),
                       img: accImg,
                       item: item.name,
                       units: `${item.qty} Nos.`,
@@ -696,13 +713,77 @@ export async function generateOctopusWordProposal(
                     };
                   }),
                   {
-                    no: (6 + accessoryItems.length).toString(),
+                    no: (8 + accessoryItems.length).toString(),
                     img: null,
                     item: "Plumbing",
                     units: "1 Set",
-                    spec: "Standard Scope",
+                    spec: " ",
+                  }, 
+              ] 
+            :[{
+                    no: "1",
+                    img: `${selectedFilter === "filter" ? TopMountedPoolFilterImg : PoolPipelessFilterImg}`,
+                    item: "Pipeless Pool Filter",
+                    units: "1 Nos.",
+                    spec: [
+                        `Model Aqua `,
+                        `Technical Specs:`,
+                        `Dimension (L x W x H): 1110 x 670 x 780 mm `,
+                        `Flow:	20 m3/Hr.`,
+                        `Filter Pump:	1.5 HP `,
+                        `Light:	9 Watt LED Light`,
+                        `Swim Jet:	1Pc `,
+                        `Filter Bag Micron:	5 Micron (1No.)`,
+                        `Power Supply:	220 Volt –Single Phase`,
+                        `MOC Material:	FRP (White)`,
+                      ],
                   },
-                ].map(
+                  {
+                    no: "2",
+                    img: PoolCleaningAccessoriesImg,
+                    item: `Cleaning Accessories`,
+                    units: "1 Set",
+                    spec: [
+                      `Maintenance Kit`,
+                      `• Wall Brush`,
+                      `• Algae Brush`,
+                      `• Telescopic Handle`,
+                      `• Aluminum Vacuum Head`,
+                      `• Deluxe Leaf Net Bag`,
+                      `• Hose Pipe`,
+                      `• Test Kit`,
+                    ],
+                  },
+                  {
+                    no: "3",
+                    img: PoolDisinfectionChemicalImg,
+                    item: "Pool Disinfection Chemical",
+                    units: "50 kg",
+                    spec: " ",
+                  },
+                  ...accessoryItems.map((item, idx) => {
+                    let accImg = null;
+                    if (item.name.includes("Ladder")) accImg = PoolLadderImg;
+                    if (item.name.includes("Light")) accImg = PoolLightsImg;
+                    if (item.name.includes("Cascade")) accImg = CascadeImg;
+                    if (item.name.includes("Robotic"))
+                      accImg = RoboticPoolCleanerImg;
+                    if (item.name.includes("UV Sterilizer"))
+                      accImg = uvSterilizerImg;
+                    if (item.name.includes("Salt Chlorinator"))
+                      accImg = saltChlorinatorImg;
+                    if (item.name.includes("Skimmer")) accImg = PoolSkimmerImg;
+
+                    return {
+                      no: (4 + idx).toString(),
+                      img: accImg,
+                      item: item.name,
+                      units: `${item.qty} Nos.`,
+                      spec: (item as any).spec || " ",
+                    };
+                  }),
+              ] 
+          )].map(
                   (row) =>
                     new docx.TableRow({
                       children: [

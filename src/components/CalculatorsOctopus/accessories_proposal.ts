@@ -63,47 +63,39 @@ export async function generateAccessoriesWordProposal(
     const saltChlorinatorImg = await loadImage(
       "/Octopus Images/HQ SQ Salt Chlorinator.jpg",
     );
-    const PoolPumpImg = await loadImage(
-      "/Octopus Images/Pool Pump.jpg"
+    const PoolPumpImg = await loadImage("/Octopus Images/Pool Pump.jpg");
+    const PoolSkimmerImg = await loadImage("/Octopus Images/Pool Skimmer.jpg");
+
+    const PoolOverflowImg = await loadImage(
+      "/Octopus Images/Overflow Grading.jpg",
     );
-    const PoolSkimmerImg = await loadImage(
-      "/Octopus Images/Pool Skimmer.jpg");
+
     const PoolPipelessFilterImg = await loadImage(
       "/Octopus Images/Pool Pipeless filter.jpg",
     );
-    const PoolLightsImg = await loadImage(
-      "/Octopus Images/Pool Lights.jpg"
-    );
-    const PoolLadderImg = await loadImage(
-      "/Octopus Images/Pool Ladder.jpg"
-    );
+    const PoolLightsImg = await loadImage("/Octopus Images/Pool Lights.jpg");
+    const PoolLadderImg = await loadImage("/Octopus Images/Pool Ladder.jpg");
     const PoolCleaningAccessoriesImg = await loadImage(
       "/Octopus Images/Pool Cleaning accessories.jpg",
     );
     const FilterWaterOutletImg = await loadImage(
       "/Octopus Images/Filter water Outlet.jpg",
     );
-    const CascadeImg = await loadImage(
-      "/Octopus Images/Cascade.jpg"
-    );
+    const CascadeImg = await loadImage("/Octopus Images/Cascade.jpg");
     const PoolDisinfectionChemicalImg = await loadImage(
       "/Octopus Images/Pool disinfection chemical.jpg",
     );
     const PoolvaccumNozzleImg = await loadImage(
       "/Octopus Images/Vaccume Nozzel.jpg",
     );
-    const AFMMediaImg = await loadImage(
-      "/Octopus Images/AFM Media.jpg"
-    );
-    const SandMediaImg = await loadImage(
-      "/Octopus Images/Sand Media.jpg"
-    );
-    const wallBrushImg = await loadImage(
-      "/Octopus Images/Wall Brush.jpg"
-    );
-    const algaeBrushImg = await loadImage(
-      "/Octopus Images/Algae Brush.jpg"
-    );
+    const AFMMediaImg = await loadImage("/Octopus Images/AFM Media.jpg");
+
+    const SandMediaImg = await loadImage("/Octopus Images/Sand Media.jpg");
+
+    const wallBrushImg = await loadImage("/Octopus Images/Wall Brush.jpg");
+
+    const algaeBrushImg = await loadImage("/Octopus Images/Algae Brush.jpg");
+
     const telescopicHandleImg = await loadImage(
       "/Octopus Images/Telescopic Handle.jpg",
     );
@@ -120,6 +112,14 @@ export async function generateAccessoriesWordProposal(
       "/Octopus Images/Hose Pipe EVA Hose Pipe.jpg",
     );
     const testKitImg = await loadImage("/Octopus Images/Test Kit.jpg");
+
+    const SideMountedPoolFilterImg = await loadImage(
+      "/Octopus Images/Side Mounted Pool Filter.jpg",
+    );
+
+    const CommercialPoolFilterImg = await loadImage(
+      "/Octopus Images/Commercial Pool Filter.jpg",
+    );
 
     setProgress(40, "Creating Document Content...");
 
@@ -319,11 +319,26 @@ export async function generateAccessoriesWordProposal(
                     const item = items[key];
 
                     let imgData = PoolCleaningAccessoriesImg;
-                    if (key === "poolFilter") imgData = TopMountedPoolFilterImg;
+                    if (key === "poolFilter" && item.type === "Top Mounted") {
+                      imgData = TopMountedPoolFilterImg;
+                    } else if (
+                      key === "poolFilter" &&
+                      item.type === "Side Mounted"
+                    ) {
+                      imgData = SideMountedPoolFilterImg;
+                    } else if (
+                      key === "poolFilter" &&
+                      item.type === "Commercial"
+                    ) {
+                      imgData = CommercialPoolFilterImg;
+                    }
+
                     if (key === "pump") imgData = PoolPumpImg;
+
                     if (key === "media")
                       imgData =
                         item.type === "AFM" ? AFMMediaImg : SandMediaImg;
+
                     if (key === "fittings") imgData = FilterWaterOutletImg;
 
                     if (key === "wallBrush") imgData = wallBrushImg;
@@ -336,6 +351,7 @@ export async function generateAccessoriesWordProposal(
                       imgData = hosePipePEImg;
                     if (key === "hosePipe" && item.type === "EVA Hose Pipe")
                       imgData = hosePipeEVAImg;
+
                     if (key === "testKit") imgData = testKitImg;
                     if (key === "vacuumNozzle") imgData = PoolvaccumNozzleImg;
                     if (key === "disinfectionChemical")
@@ -349,24 +365,41 @@ export async function generateAccessoriesWordProposal(
                       imgData = RoboticPoolCleanerImg;
                     if (key === "uvSterilizer") imgData = uvSterilizerImg;
                     if (key === "saltChlorinator") imgData = saltChlorinatorImg;
+                    if (key === "poolSkimmer") 
+                      imgData = PoolSkimmerImg;
+                    if (key === "overflow") 
+                      imgData = PoolOverflowImg;
+
                     let specText = item.spec || "";
                     if (key === "poolFilter")
                       specText = `${item.type} Pool Filter - ${item.dia} Dia`;
                     if (key === "pump") specText = `${item.hp} HP`;
                     if (key === "media")
                       specText = `${item.type} Filtration Media`;
-                    if (key === "wallBrush")
-                      specText = `${item.size}`;
-                    if (key === "algaeBrush")
-                      specText = `${item.size}`;
-                    if (key === "vacuumHead")
-                      specText = `${item.size}`;
+                    if (key === "wallBrush") specText = `${item.size}`;
+                    if (key === "algaeBrush") specText = `${item.size}`;
+                    if (key === "vacuumHead") specText = `${item.size}`;
                     if (key === "hosePipe")
                       specText = `${item.type} - ${item.size}`;
                     if (key === "poolLadder")
                       specText = `SS304 Pool Ladder - ${item.steps}`;
-                    if (key === "underwaterLight")
-                      specText = `${item.watt}`;
+                    if (key === "underwaterLight") specText = `${item.watt}`;
+                    if (key === "overflow")
+                      specText = `Overflow Grading ${item.size}`;
+
+                    if (key === "pipelessFilter")
+                      specText = [
+                        `Model Aqua `,
+                        `Technical Specs:`,
+                        `Dimension (L x W x H): 1110 x 670 x 780 mm `,
+                        `Flow:	20 m3/Hr.`,
+                        `Filter Pump:	1.5 HP `,
+                        `Light:	9 Watt LED Light`,
+                        `Swim Jet:	1Pc `,
+                        `Filter Bag Micron:	5 Micron (1No.)`,
+                        `Power Supply:	220 Volt –Single Phase`,
+                        `MOC Material:	FRP (White)`,
+                      ].join(`\n`);
 
                     return new docx.TableRow({
                       children: [
@@ -391,9 +424,20 @@ export async function generateAccessoriesWordProposal(
                             new docx.Paragraph({
                               children: [new docx.TextRun(item.label)],
                             }),
-                            new docx.Paragraph({
-                              children: [new docx.TextRun(specText)],
-                            }),
+
+                            key === "pipelessFilter"
+                              ? new docx.Paragraph({
+                                  children: specText.split("\n").map(
+                                    (line) =>
+                                      new docx.TextRun({
+                                        text: line,
+                                        break: 1,
+                                      }),
+                                  ),
+                                })
+                              : new docx.Paragraph({
+                                  children: [new docx.TextRun(specText)],
+                                }),
                           ],
                           verticalAlign: docx.VerticalAlign.CENTER,
                         }),
@@ -531,7 +575,6 @@ export async function generateAccessoriesWordProposal(
                 new docx.TextRun({ text: "Authorized Signatory:", bold: true }),
               ],
             }),
-            new docx.Paragraph({ text: "", spacing: { before: 100 } }),
             new docx.Paragraph({
               children: [
                 new docx.TextRun({ text: authorized_Person, bold: true }),
