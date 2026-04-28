@@ -432,6 +432,10 @@ export async function generateOctopusWordProposal(
     const OverflowGratingImg = await loadImage(
       "/Octopus Images/Overflow Grading.jpg",
     );
+    
+    const InletNozzelImg = await loadImage("/Octopus Images/Inlet Nozzel.jpg");
+    const MaindrainImg = await loadImage("/Octopus Images/Main drain.jpg");
+
 
     setProgress(40, "Creating Document Content...");
 
@@ -691,6 +695,20 @@ export async function generateOctopusWordProposal(
                     units: "50 kg",
                     spec: " ",
                   },
+                  {
+                    no: "8",
+                    img: MaindrainImg,
+                    item: "Main Drain",
+                    units: "1 Nos.",
+                    spec: " ",
+                  },
+                  {
+                    no: "9",
+                    img: InletNozzelImg,
+                    item: "Inlet Nozzle",
+                    units: "1 Nos.",
+                    spec: " ",
+                  },
                   ...accessoryItems.map((item, idx) => {
                     let accImg = null;
                     if (item.name.includes("Ladder")) accImg = PoolLadderImg;
@@ -705,7 +723,7 @@ export async function generateOctopusWordProposal(
                     if (item.name.includes("Skimmer")) accImg = PoolSkimmerImg;
 
                     return {
-                      no: (8 + idx).toString(),
+                      no: (10 + idx).toString(),
                       img: accImg,
                       item: item.name,
                       units: `${item.qty} Nos.`,
@@ -713,7 +731,7 @@ export async function generateOctopusWordProposal(
                     };
                   }),
                   {
-                    no: (8 + accessoryItems.length).toString(),
+                    no: (10 + accessoryItems.length).toString(),
                     img: null,
                     item: "Plumbing",
                     units: "1 Set",

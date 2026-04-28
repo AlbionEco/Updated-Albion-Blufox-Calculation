@@ -26,9 +26,11 @@ export interface AccessoriesProposalInputs {
       steps?: string;
       watt?: string;
       label: string;
+      category: string;
     };
   };
   authorized_Person: string;
+    special_Terms: string;
 }
 
 export async function generateAccessoriesWordProposal(
@@ -120,6 +122,9 @@ export async function generateAccessoriesWordProposal(
     const CommercialPoolFilterImg = await loadImage(
       "/Octopus Images/Commercial Pool Filter.jpg",
     );
+
+    const MainDrainImg = await loadImage("/Octopus Images/Main drain.jpg");
+    const InletNozzelImg = await loadImage("/Octopus Images/Inlet Nozzel.jpg");
 
     setProgress(40, "Creating Document Content...");
 
@@ -369,6 +374,10 @@ export async function generateAccessoriesWordProposal(
                       imgData = PoolSkimmerImg;
                     if (key === "overflow") 
                       imgData = PoolOverflowImg;
+                    if (key === "mainDrain")
+                      imgData = MainDrainImg;
+                    if (key === "inletNozzle")
+                      imgData = InletNozzelImg;
 
                     let specText = item.spec || "";
                     if (key === "poolFilter")

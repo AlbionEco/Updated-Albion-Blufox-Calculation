@@ -384,7 +384,7 @@ const SumitomoCalculator: React.FC = () => {
         <div className="xl:col-span-8 print:my-[-30px] print:mx-[-10px]">
           {results ? (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="bg-white border-2 border-slate-900 rounded-2xl overflow-hidden shadow-2xl">
+              <div className="bg-white border-2 border-slate-900 rounded-2xl overflow-hidden shadow-2xl print:shadow-none print:border-0">
                 <div className="bg-slate-900 text-white px-6 py-4 flex justify-between items-center no-print">
                   <div className="flex items-center gap-3">
                     <FileText className="w-5 h-5 text-blue-400" />

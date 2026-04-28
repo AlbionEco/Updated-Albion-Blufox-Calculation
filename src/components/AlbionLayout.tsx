@@ -12,7 +12,7 @@ const AlbionLayout: React.FC = () => {
         <Outlet />
       </main>
       <footer className="bg-white border-t border-gray-200 py-6 text-center text-sm text-gray-500 no-print">
-        &copy; {new Date().getFullYear()} Albion Ecotech. All rights reserved.
+        &copy; {new Date().getFullYear()} ALBION ECOTECH PVT. LTD. All rights reserved.
       </footer>
     </div>
   );

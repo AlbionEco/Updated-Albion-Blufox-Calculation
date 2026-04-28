@@ -19,6 +19,7 @@ import Layout3D from './components/Layout3D/Layout3D';
 import Mbr3DLayout from './components/Layout3D/Mbr3DLayout';
 import OctopusProposalGenerator from './components/CalculatorsOctopus/OctopusProposalGenerator.tsx';
 import AccessoriesProposalGenerator from './components/CalculatorsOctopus/AccessoriesProposalGenerator.tsx';
+import ProposalGeneratorAlbion from './components/Calculators/Proposal/ProposalGeneratorAlbion.tsx';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const hasToken = document.cookie.includes('token=');
@@ -55,6 +56,7 @@ export default function App() {
             <Route path="mbr" element={<MbrCalculator />} />
             <Route path="pressure" element={<PressureCalculator />} />
             <Route path="afm" element={<AfmCalculator />} />
+            <Route path="proposalalbion" element={<ProposalGeneratorAlbion />} />
           </Route>
 
           {/* Blufox Flow */}

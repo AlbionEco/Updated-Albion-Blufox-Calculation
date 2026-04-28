@@ -14,7 +14,7 @@ const BlufoxLayout: React.FC = () => {
       <footer className="bg-white border-t border-blue-100 py-8 text-center text-sm text-blue-600/60  no-print">
         <div className="flex flex-col items-center gap-2">
           <div className="font-black tracking-tighter text-lg">BLUFOX</div>
-          <div>&copy; {new Date().getFullYear()} Blufox Analytics. All rights reserved.</div>
+          <div>&copy; {new Date().getFullYear()} BLUFOX ECOVENTURES LLP. All rights reserved.</div>
         </div>
       </footer>
     </div>

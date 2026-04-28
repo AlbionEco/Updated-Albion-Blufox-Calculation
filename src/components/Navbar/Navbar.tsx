@@ -13,6 +13,7 @@ const Navbar: React.FC = () => {
     { name: 'Filter Pressure', path: '/albion/pressure' },
     { name: 'Capacity Of Dosing Pump', path: '/albion/cebcip' },
     { name: 'AFM (Dryden Aqua)', path: '/albion/afm' },
+    { name: 'Proposal Generator', path: '/albion/proposalalbion' },
   ];
 
   const handleLogOut = () => {

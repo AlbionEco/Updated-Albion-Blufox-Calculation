@@ -247,7 +247,7 @@ const BiologicalCalculator: React.FC = () => {
         <div className="xl:col-span-8 print:my-[-30px] print:mx-[-10px]">
           {results ? (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="bg-white border-2 border-slate-900 rounded-2xl overflow-hidden shadow-2xl print:shadow-none">
+              <div className="bg-white border-2 border-slate-900 rounded-2xl overflow-hidden shadow-2xl print:shadow-none print:border-0">
                 <div className="bg-slate-900 text-white px-6 py-4 flex justify-between items-center no-print">
                   <div className="flex items-center gap-3">
                     <FileText className="w-5 h-5 text-blue-400" />
@@ -323,12 +323,12 @@ const BiologicalCalculator: React.FC = () => {
                         <tr className="bg-slate-900 text-white">
                           <td className="px-6 py-3 text-xs font-black uppercase tracking-widest">Total Air Required (Aeration + NH4)</td>
                           <td className="px-6 py-3 text-right font-mono text-sm font-bold">{results.totalAirRequired}</td>
-                          <td className="px-6 py-3 text-left w-20 text-[11px] font-black uppercase">m³/hr</td>
+                          <td className="px-6 py-3 text-left w-20 text-[12px] font-black">m³/hr</td>
                         </tr>
                         <tr className="bg-blue-600 text-white">
                           <td className="px-6 py-3 text-xs font-black uppercase tracking-widest">Total Air Diffusers (Aeration + NH4)</td>
                           <td className="px-6 py-3 text-right font-mono text-sm font-bold">{results.totaldiffuser}</td>
-                          <td className="px-6 py-3 text-left w-20 text-[11px] font-black uppercase">Nos.</td>
+                          <td className="px-6 py-3 text-left w-20 text-[12px] font-black">Nos.</td>
                         </tr>
                       </tbody>
                     </table>
@@ -385,7 +385,7 @@ const TableRow: React.FC<{ label: React.ReactNode; value: any; unit?: string; hi
       <span className={`font-mono text-xs font-bold ${highlight ? 'text-blue-600' : 'text-slate-900'}`}>{value}</span>
     </td>
     <td className="px-4 py-2.5 text-left w-20">
-      {unit && <span className="text-[11px] text-slate-500 uppercase">{unit}</span>}
+      {unit && <span className="text-[11px] text-slate-500 ">{unit}</span>}
     </td>
   </tr>
 );

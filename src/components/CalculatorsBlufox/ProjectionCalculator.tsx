@@ -37,7 +37,7 @@ const ProjectionCalculator: React.FC = () => {
 
     let relaxation = 0;
     let CEBtext = "";
-    if (["12B6", "12B9", "12B12", "12B38", "12B57"].includes(String(module))) {
+    if (["12B6", "12B12"].includes(String(module))) {
       relaxation = 1;
       if (designBase === "with_BW") {
         CEBtext = "CEB (Maintenance cleaning - Every 10-15 days)";
@@ -75,22 +75,16 @@ const ProjectionCalculator: React.FC = () => {
       "BF500D(370)": { area: 34.4, height: 2571, width: 1745, length: 1364 },
       "BF500D(340)": { area: 31.6, height: 2571, width: 875, length: 1364 },
       "BF500S": { area: 28, height: 1838.8, width: 217, length: 355 },
-      "12B6": { area: 6, height: 1300, width: 528, length: 0 },
-      "12B9": { area: 9, height: 0, width: 0, length: 0 },
-      "12B12": { area: 12, height: 2410, width: 528, length: 0 },
-      "12B38": { area: 38, height: 2200, width: 528, length: 0 },
-      "12B57": { area: 57, height: 3220, width: 528, length: 0 }
+      "12B6": { area: 6, height: 1300, width: 154, length: 138 },
+      "12B12": { area: 12, height: 2410, width: 154, length: 138 },
     };
     const moduleInfo = moduleMap[module] || { area: 0, height: 0, width: 0, length: 0 };
     membraneSurfaceAreaPerMBR = moduleInfo.area;
 
     let TotalNumberOfModule = Math.ceil((flowRate * 1000) / (flux * workingHr * membraneSurfaceAreaPerMBR));
-    if (module.startsWith("12B")) {
-      TotalNumberOfModule = Math.ceil((flowRate * 1000) / (flux * 25 * workingHr * membraneSurfaceAreaPerMBR));
-    }
-
+    
     const NoofModulePerTrain = Math.ceil(TotalNumberOfModule / noOfTrain);
-    const MembraneSurfaceAreaPerTrain = NoofModulePerTrain * membraneSurfaceAreaPerMBR;
+    const MembraneSurfaceAreaPerTrain = Number(NoofModulePerTrain * membraneSurfaceAreaPerMBR).toFixed(2);
     const TotalMembraneSurfaceArea = parseFloat((TotalNumberOfModule * membraneSurfaceAreaPerMBR).toFixed(1));
     const OperatingFlux = parseFloat((flux * 0.0238).toFixed(1));
     const rawTimeFlux = parseFloat((flux * 83.34 / 100).toFixed(1));
@@ -168,30 +162,19 @@ const ProjectionCalculator: React.FC = () => {
       VerticalTankWidth = ((355 * Math.ceil(NoofModulePerTrain / Math.ceil(Math.sqrt(NoofModulePerTrain)))) + ((Math.ceil(NoofModulePerTrain / Math.ceil(Math.sqrt(NoofModulePerTrain))) - 1) * 150)) + 600;
       WaterLevelHeight = frameHeight + 300;
       TotalTankHeight = WaterLevelHeight + 400;
-    } else if (["12B6", "12B9", "12B12", "12B38", "12B57"].includes(module)) {
-      const l = ((NoofModulePerTrain / 2) * 143) + (((NoofModulePerTrain - 1) / 2) * 25) + (NoofModulePerTrain * 5) + 90;
-      let w = NoofModulePerTrain < 26 ? 0.528 : 0.548;
-      let h = 0;
-      let ewd = 0;
-      if (module === "12B6") {
-        h = 1.3;
-        ewd = 1.6;
-      } else if (module === "12B12") {
-        h = 2.41;
-        ewd = 2.71;
-      } else if (module === "12B38") {
-        h = 2.2;
-        ewd = 2.5;
-      } else if (module === "12B57") {
-        h = 3.22;
-        ewd = 3.52;
-      }
-      HorizontalTankLength = l;
-      HorizontalTankWidth = w * 1000; // converting to mm for consistency
-      VerticalTankLength = l;
-      VerticalTankWidth = w * 1000;
-      WaterLevelHeight = ewd * 1000;
-      TotalTankHeight = (h + 0.3) * 1000; // Assuming 0.3m freeboard for 12B
+    } else if (["12B6", "12B12"].includes(module)) {
+      let NoOfSet = Math.ceil(NoofModulePerTrain / 30);
+      let NoOfColumns = 2 * Math.ceil(NoofModulePerTrain / 30);
+      let MembranePerColumn = Math.ceil(NoofModulePerTrain / (2 * Math.ceil(NoofModulePerTrain / 30)));
+      frameLength = 143 * (MembranePerColumn - 2) + (153 * 2) +( MembranePerColumn - 1 ) * 25 + 200 + 100;
+      frameWidth =(NoOfColumns*164) + ((NoOfColumns/2)*100) + (((NoOfColumns/2)-1)*50) + 100 + (NoOfColumns*10) 
+      frameHeight = mHeight + 700;
+      HorizontalTankLength = (frameLength + 500) + ( noOfTrain * 100) ;
+      HorizontalTankWidth = frameWidth + 600; 
+      VerticalTankLength = frameWidth + 600;
+      VerticalTankWidth = frameLength +600;
+      WaterLevelHeight = frameHeight + 300;
+      TotalTankHeight = WaterLevelHeight + 400; 
     }
 
     TankVolumeHorizontal = Math.ceil(((HorizontalTankLength / 1000) * (HorizontalTankWidth / 1000) * (TotalTankHeight / 1000)) * 100) / 100;
@@ -225,14 +208,14 @@ const ProjectionCalculator: React.FC = () => {
     }
 
     let filteration = 0;
-    if (["12B6", "12B9", "12B12", "12B38", "12B57"].includes(String(module))) {
+    if (["12B6", "12B12", ].includes(String(module))) {
       filteration = 9;
     }
     else {
       filteration = 8;
     }
     let backwash = "0";
-    if (["12B6", "12B9", "12B12", "12B38", "12B57"].includes(String(module))) {
+    if (["12B6", "12B12",].includes(String(module))) {
       backwash = "Can be applied <100kPa / <1bar";
     }
     else {
@@ -339,11 +322,8 @@ const ProjectionCalculator: React.FC = () => {
     else if (["SUS300", "SUS313", "SUS400"].includes(module)) ModuleSize = "2000 x 1250 x 30";
     else if (module === "BF500D") ModuleSize = "2198 x 844 x 49";
     else if (module === "BF500S") ModuleSize = "1838.8 x 355 x 217";
-    else if (module === "12B6") ModuleSize = "1300 x 156 x 164";
-    else if (module === "12B9") ModuleSize = "";
-    else if (module === "12B12") ModuleSize = "2410 x 156 x 164";
-    else if (module === "12B38") ModuleSize = "2200 x 50 x 840";
-    else if (module === "12B57") ModuleSize = "3220 x 50 x 840";
+    else if (module === "12B6") ModuleSize = "1300 x 138 x 154";
+    else if (module === "12B12") ModuleSize = "2410 x 138 x 154";
 
     setResults({
       membraneSurfaceAreaPerMBR,
@@ -409,7 +389,31 @@ const ProjectionCalculator: React.FC = () => {
       WaterLevelHeight,
       TotalTankHeight,
       TankVolumeHorizontal,
-      TankVolumeVertical
+      TankVolumeVertical,
+      NacloChemicalInjectionRatioForCIP,
+      NacloChemicalInjectionRatioForHCIP,
+      NaclosubQuantity,
+      NacloQuantity,
+      NacloTotalDynamicHead,
+      NacloRequiredChemicalperCIP,
+      NacloRequiredChemicalperHCIP,
+      NacloTankCapacityMoreThan,
+      NaohChemicalInjectionRatioForCIP,
+      NaohChemicalInjectionRatioForHCIP,
+      NaohsubQuantity,
+      NaohQuantity,
+      NaohTotalDynamicHead,
+      NaohRequiredChemicalperCIP,
+      NaohRequiredChemicalperHCIP,
+      NaohTankCapacityMoreThan,
+      AcidChemicalInjectionRatioForCIP,
+      AcidChemicalInjectionRatioForHCIP,
+      AcidsubQuantity,
+      AcidQuantity,
+      AcidTotalDynamicHead,
+      AcidRequiredChemicalperCIP,
+      AcidRequiredChemicalperHCIP,
+      AcidTankCapacityMoreThan,
     });
   };
 
@@ -484,10 +488,7 @@ const ProjectionCalculator: React.FC = () => {
                   </optgroup>
                   <optgroup label="Sumitomo">
                     <option value="12B6"> 12B6 (6m2)</option>
-                    <option value="12B9"> 12B9 (9m2)</option>
                     <option value="12B12"> 12B12 (12m2)</option>
-                    <option value="12B38">12B38 (38m2)</option>
-                    <option value="12B57">12B57 (57m2)</option>
                   </optgroup>
                 </select>
               </div>
@@ -605,7 +606,7 @@ const ProjectionCalculator: React.FC = () => {
           {results ? (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
               {/* Main Specification Table */}
-              <div className="bg-white border-2 border-slate-900 rounded-2xl overflow-hidden shadow-2xl">
+              <div className="bg-white border-2 border-slate-900 rounded-2xl overflow-hidden shadow-2xl print:shadow-none print:border-0">
                 <div className="bg-slate-900 text-white px-6 py-4 flex justify-between items-center no-print">
                   <div className="flex items-center gap-3">
                     <FileText className="w-5 h-5 text-blue-400" />
@@ -661,9 +662,9 @@ const ProjectionCalculator: React.FC = () => {
                           <TableRow label="Product Model" value={inputs.module} />
                           <TableRow label="Membrane Surface area per MBR" value={results.membraneSurfaceAreaPerMBR} unit="m²" />
                           <TableRow label="Design average daily Flow rate" value={inputs.flowRate} unit="m³/d" />
-                          <TableRow label="Number of Train/Frame" value={results.config} unit="train/Frame" />
-                          <TableRow label="Number of Module per Train/Frame" value={results.NoofModulePerTrain} unit="module/train" />
-                          <TableRow label="Total number of Module" value={results.TotalNumberOfModule} unit="module" highlight />
+                          <TableRow label="Number of Train/Frame" value={inputs.noOfTrain} unit="Train/Frame" />
+                          <TableRow label="Number of Module per Train/Frame" value={results.NoofModulePerTrain} unit="Module/Train" />
+                          <TableRow label="Total number of Module" value={results.TotalNumberOfModule} unit="Module" highlight />
                           <TableRow label="Membrane surface area per train/Frame" value={results.MembraneSurfaceAreaPerTrain} unit="m²" />
                           <TableRow label="Total Membrane surface area" value={results.TotalMembraneSurfaceArea} unit="m²" highlight />
                           <TableRow label="Operating Flux (Design Average) Daily Flux" value={results.OperatingFlux} unit="m/d" />
@@ -754,10 +755,10 @@ const ProjectionCalculator: React.FC = () => {
 
                   {inputs.module?.startsWith("12B") && (<>
                     <div>
-                      <table>
+                      <table  className='print:w-full'>
                         <tbody>
                           <tr className="bg-blue-500/10">
-                            <td colSpan={3} className="px-6 py-2 text-[12px] font-black uppercase tracking-widest text-blue-800 italic">Chemical Dosing</td>
+                            <td colSpan={3} className="px-6 py-2 text-[12px] font-black uppercase tracking-widest text-blue-800 italic ">Chemical Dosing</td>
                           </tr>
                           <tr>
                             <td colSpan={6} className="py-4 px-6">
@@ -1107,7 +1108,7 @@ const TableRow: React.FC<{ label: React.ReactNode; value: any; unit?: string; hi
       <span className={`font-mono text-xs font-bold ${highlight ? 'text-blue-600' : 'text-slate-900'}`}>{value}</span>
     </td>
     <td className={` px-4 py-2.5 text-left w-20 ${subtable ? 'px-2' : 'px-3'} `}>
-      {unit && <span className="text-[11px] text-slate-500 uppercase">{unit}</span>}
+      {unit && <span className="text-[11px] text-slate-500 ">{unit}</span>}
     </td>
   </tr>
 );

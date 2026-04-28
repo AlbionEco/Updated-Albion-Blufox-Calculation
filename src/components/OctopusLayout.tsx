@@ -14,7 +14,7 @@ const OctopusLayout: React.FC = () => {
       <footer className="bg-white border-t border-blue-100 py-8 text-center text-sm text-blue-600/60  no-print">
         <div className="flex flex-col items-center gap-2">
           <div className="font-black tracking-tighter text-lg">Octopus</div>
-          <div>&copy; {new Date().getFullYear()} Octopus Pools & Services. All rights reserved.</div>
+          <div>&copy; {new Date().getFullYear()} OCTOPUS POOLS & LIFESTYLE. All rights reserved.</div>
         </div>
       </footer>
     </div>
