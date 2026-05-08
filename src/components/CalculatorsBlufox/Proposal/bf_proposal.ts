@@ -834,7 +834,7 @@ The filtration takes place by means of suction pump which delivers the treated w
     const pageBottomLimit = pageHeight - footerHeight - 10; // Buffer space before footer
 
     // Function to handle Page Breaks
-    async function checkPageBreak(requiredSpace) {
+    async function checkPageBreak(requiredSpace: number) {
       if (currentY + requiredSpace > pageBottomLimit) {
         doc.addPage();
         await drawBackground(doc, watermark);
@@ -868,7 +868,7 @@ The filtration takes place by means of suction pump which delivers the treated w
       const specialLines = doc.splitTextToSize(special_Terms, textWidth);
 
       // Loop through EVERY line. This allows the text to break across pages gracefully.
-      specialLines.forEach((line) => {
+      specialLines.forEach((line: string) => {
         checkPageBreak(lineHeight); // Check if 1 line fits
         doc.text(line, contentStartX, currentY);
         currentY += lineHeight;

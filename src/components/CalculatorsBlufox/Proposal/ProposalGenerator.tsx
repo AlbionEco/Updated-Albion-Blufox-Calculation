@@ -69,8 +69,12 @@ const ProposalGenerator: React.FC = () => {
       membraneSurfaceAreaPerMBR = 40;
     } else if (module === "500S") {
       membraneSurfaceAreaPerMBR = 28;
-    } else if (module === "500D") {
+    } else if (module === "500D(340)") {
       membraneSurfaceAreaPerMBR = 31.6;
+    } else if (module === "500D(370)") {
+      membraneSurfaceAreaPerMBR = 34.4;
+    } else if (module === "500D(430)") {
+      membraneSurfaceAreaPerMBR = 40.9;
     } else if (module === "12B6") {
       membraneSurfaceAreaPerMBR = 6;
     } else if (module === "12B9") {
@@ -103,7 +107,7 @@ const ProposalGenerator: React.FC = () => {
       await generateSUSProposal(inputs, updateProgress);
     } else if (module === '500S') {
       await generate500SProposal(inputs, updateProgress);
-    } else if (module === '500D') {
+    } else if (module.startsWith('500D')) {
       await generate500DProposal(inputs, updateProgress);
     } else if (module.startsWith('12B')) {
       await generateSumitomoProposal(inputs, updateProgress);
@@ -125,7 +129,7 @@ const ProposalGenerator: React.FC = () => {
       await generateSUSWordProposal(inputs, updateProgress);
     } else if (module === '500S') {
       await generate500SWordProposal(inputs, updateProgress);
-    } else if (module === '500D') {
+    } else if (module.startsWith('500D')) {
       await generate500DWordProposal(inputs, updateProgress);
     } else if (module.startsWith('12B')) {
       await generateSumitomoWordProposal(inputs, updateProgress);
@@ -263,7 +267,9 @@ const ProposalGenerator: React.FC = () => {
                 </optgroup>
                 <optgroup label="500 Series">
                   <option value="500S">BF500S (28m2)</option>
-                  <option value="500D">BF500D (31.6m2)</option>
+                  <option value="500D(340)">BF500D (340) (31.6m2)</option>
+                  <option value="500D(370)">BF500D (370) (34.4m2)</option>
+                  <option value="500D(430)">BF500D (430) (40.9m2)</option>
                 </optgroup>
                 <optgroup label="Sumitomo PTFE Membrane">
                   <option value="12B6">Sumitomo 12B6 (6m2)</option>

@@ -57,13 +57,94 @@ export async function generate500DProposal(
 
     let membraneSurfaceAreaPerMBR = 0;
     // Perform calculations based on formulas
-    if (module == "500D") {
+    if (module == "500D(340)") {
       membraneSurfaceAreaPerMBR = 31.6;
+    } else if (module == "500D(370)") {
+      membraneSurfaceAreaPerMBR = 34.4;
+    } else if (module == "500D(430)") {
+      membraneSurfaceAreaPerMBR = 40.9;
     }
 
+    const effectiveFlowRate = flowRate / 20;
+    const perTrainFlowRate = parseFloat(
+      (effectiveFlowRate / noOfTrain).toString(),
+    ).toFixed(2);
     const TotalNumberOfModule = Math.ceil(
       (flowRate * 1000) / (flux * workingHr * membraneSurfaceAreaPerMBR),
     );
+    const NoofModulePerTrain = Math.ceil(TotalNumberOfModule / noOfTrain);
+    const MembraneSurfaceAreaPerTrain =
+      NoofModulePerTrain * membraneSurfaceAreaPerMBR;
+
+    let length = 0;
+    let width = 0;
+    let height = 0;
+    let effectiveWaterDepth = 0;
+    let tanklength = 0;
+    let tankwidth = 0;
+    let tankheight = 0;
+    let surfaceareapertrain = 0;
+
+    // Logic updated to handle SUS113 dimensions
+    if (module == "500D(340)") {
+      length =
+        (NoofModulePerTrain * 49 + (NoofModulePerTrain) * 15 + 100) / 1000;
+      width = 0.944;
+      height = 2.798;
+      effectiveWaterDepth = 3.098;
+      surfaceareapertrain =
+        (Number(length) + 0.6) * (width + 0.6) * (height + 0.7);
+      tanklength = length * noOfTrain + (noOfTrain - 1) * 0.1 + 0.6;
+      tankwidth =
+        width * (noOfTrain === 1 ? 1 : Math.ceil(noOfTrain / 2)) +
+        ((noOfTrain === 1 ? 1 : Math.ceil(noOfTrain / 2)) - 1) * 0.1 +
+        0.6;
+      tankheight = effectiveWaterDepth + 0.4;
+    } else if (module == "500D(370)") {
+      length =
+        (NoofModulePerTrain * 49 + (NoofModulePerTrain) * 15 + 100) / 1000;
+      width = 0.944;
+      height = 2.798;
+      effectiveWaterDepth = 3.098;
+      surfaceareapertrain =
+        (Number(length) + 0.6) * (width + 0.6) * (height + 0.7);
+      tanklength = length * noOfTrain + (noOfTrain - 1) * 0.1 + 0.6;
+      tankwidth =
+        width * (noOfTrain === 1 ? 1 : Math.ceil(noOfTrain / 2)) +
+        ((noOfTrain === 1 ? 1 : Math.ceil(noOfTrain / 2)) - 1) * 0.1 +
+        0.6;
+      tankheight = effectiveWaterDepth + 0.4;
+    } else if (module == "500D(430)") {
+      length =
+        (NoofModulePerTrain * 49 + (NoofModulePerTrain) * 15 + 100) / 1000;
+      width = 0.944;
+      height = 2.798;
+      effectiveWaterDepth = 3.098;
+      surfaceareapertrain =
+        (Number(length) + 0.6) * (width + 0.6) * (height + 0.7);
+      tanklength = length * noOfTrain + (noOfTrain - 1) * 0.1 + 0.6;
+      tankwidth =
+        width * (noOfTrain === 1 ? 1 : Math.ceil(noOfTrain / 2)) +
+        ((noOfTrain === 1 ? 1 : Math.ceil(noOfTrain / 2)) - 1) * 0.1 +
+        0.6;
+      tankheight = effectiveWaterDepth + 0.4;
+    }
+    const TotalMembraneTankVolume = (
+      Number(tanklength) *
+      Number(tankwidth) *
+      Number(tankheight)
+    ).toFixed(2);
+
+    console.log("length" ,length);
+    console.log("width" ,width);
+    console.log("height" ,height);
+    console.log("effectiveWaterDepth" ,effectiveWaterDepth);
+    console.log("tanklength" ,tanklength);
+    console.log("tankwidth" ,tankwidth);
+    console.log("tankheight" ,tankheight);
+    console.log("Total MBR Module Required" ,TotalNumberOfModule);
+  
+
     const TotalMembraneSurfaceArea = (
       TotalNumberOfModule * membraneSurfaceAreaPerMBR
     ).toFixed(1);
@@ -79,6 +160,16 @@ export async function generate500DProposal(
       RequiredtotalAirFlowRate = Number(TotalMembraneSurfaceArea) * 0.3;
     }
     RequiredtotalAirFlowRate = parseFloat(RequiredtotalAirFlowRate.toFixed(2));
+
+    const RequiredTotalFlowrateforpeakflux = Number(
+      (flowRate / workingHr).toFixed(2),
+    );
+    const RequiredBackwashFlowRate = Number(
+      (RequiredTotalFlowrateforpeakflux * 1.5).toFixed(2),
+    );
+    const RasPumpFlow = +((flowRate / 24) * 3).toFixed(2);
+
+    const formattedDate = formatToDDMMYYYY(date);
 
     setProgress(15, "Loading Images...");
     const headerImgData = await loadImage("/Images for Proposal/header.jpg");
@@ -110,8 +201,6 @@ export async function generate500DProposal(
         footerHeight,
       );
     };
-
-    const formattedDate = formatToDDMMYYYY(date);
 
     // Page 1
     setProgress(40, "Creating Page 1...");
@@ -352,6 +441,97 @@ export async function generate500DProposal(
       { maxWidth: 175, align: "justify" },
     );
 
+    doc.addPage();
+        await drawBackground(doc, watermark);
+        currentY = headerHeight + 15;
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bolditalic");
+        doc.setTextColor(0, 0, 139);
+        doc.text("Offer Parameter", 15, currentY);
+        currentY += 5;
+        autoTable(doc, {
+          startY: currentY,
+          head: [["Parameters", "Unit", "Range"]],
+          body: [
+            ["Flow Rate of the system", "KLD", `${flowRate}`],
+            [
+              "Effective flow Rate (Considering loss of relax & Backwash)",
+              "m3/hr",
+              `${effectiveFlowRate.toFixed(2)}`,
+            ],
+            ["Design Frame/Train Qty", "Nos", `${noOfTrain}`],
+            ["Per Frame/Train Flow Rate ", "m3/hr", `${perTrainFlowRate}`],
+            ["Design Flux (Avg.)", "LMH", `${flux}`],
+            ["Total MBR Module Required(BLUFOX®)", "Nos", `${TotalNumberOfModule}`],
+            ["Per Frame MBR Module Required", "No.", `${NoofModulePerTrain}`],
+            [
+              "Per Frame MBR Module Surface Area",
+              "m2",
+              `${MembraneSurfaceAreaPerTrain}`,
+            ],
+            [
+              "Total MBR Membrane Surface Area",
+              "m2",
+              `${TotalMembraneSurfaceArea}`,
+            ],
+            ["Total MBR Air Required", "m3/hr", `${RequiredtotalAirFlowRate}`],
+            [
+              "MBR Frame/Train Size (Each)",
+              "L x W x H mm",
+              `${Math.ceil(length * 1000)} x ${Math.ceil(width * 1000)} x ${Math.ceil(height * 1000)}`,
+            ],
+            ["MBR Frame MOC", "-", `SS304`],
+            [
+              "MBR Tank Volume Required (Approx.)",
+              "m3",
+              `${TotalMembraneTankVolume}`,
+            ],
+            [
+              "Permeate Pump Flow @ 12-13m Head",
+              "m3/hr",
+              `${RequiredTotalFlowrateforpeakflux}`,
+            ],
+            [
+              "Back Wash Pump Flow @ 10m Head ",
+              "m3/hr",
+              `${RequiredBackwashFlowRate}`,
+            ],
+            ["RAS Pump Flow @ 15m Head ", "m3/hr", `${RasPumpFlow}`],
+          ],
+          tableWidth: 175,
+          margin: { left: 15 },
+          theme: "grid",
+          headStyles: {
+            fillColor: [169, 169, 169],
+            fontStyle: "bold",
+            halign: "left",
+          },
+          styles: { fontStyle: "normal", halign: "center", textColor: 0 },
+          alternateRowStyles: { fillColor: [240, 240, 240] },
+          bodyStyles: { fillColor: [255, 255, 255] },
+        });
+        currentY = doc.lastAutoTable.finalY + 5;
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(0);
+        doc.text("Note:", 15, currentY);
+        currentY += 2;
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(0);
+        doc.text(
+          "1. Vertical Distance between the water level in the MBR tank and back wash tank shall not be more than 0.7mtr",
+          15,
+          currentY + 5,
+          { maxWidth: 170, align: "justify" },
+        );
+        doc.text(
+          "2. Maintain the water level 300-500mm above the MBR frame / Module.",
+          15,
+          currentY + 15,
+          { maxWidth: 170, align: "justify" },
+        );
+
     //new page
     doc.addPage();
     await drawBackground(doc, watermark);
@@ -380,20 +560,42 @@ export async function generate500DProposal(
     doc.setFontSize(11);
     autoTable(doc, {
       startY: currentY + 5,
-      head: [["No.", "Item", "Qty.", "Total Price (Rs.)"]],
+      head: [
+        noOfTrain > 1
+          ? ["No.", "Item", "Qty.", "Price/Block", "Total Price (Rs.)"]
+          : ["No.", "Item", "Qty.", "Price (Rs.)"],
+      ],
+
       body: [
-        [
-          "1.",
-          `Blufox - MBR Membranes\nPlant Capacity: ${flowRate} KLD ${treatment_Type}\nwith SS304 Skid(Frame)`,
-          `${TotalNumberOfModule}`,
-          `${(offer_Price * TotalNumberOfModule).toLocaleString("en-IN")}/-`,
-        ],
-        [
-          "",
-          "",
-          "Total Price (Rs.)",
-          `${(offer_Price * TotalNumberOfModule).toLocaleString("en-IN")}/-`,
-        ],
+        noOfTrain > 1
+          ? [
+              "1.",
+              `Blufox - MBR Membranes\nPlant Capacity: ${flowRate} KLD ${treatment_Type}\nwith SS304 Skid(Frame)`,
+              `${noOfTrain} Block${noOfTrain > 1 ? "s" : ""}`,
+              `${((offer_Price * TotalNumberOfModule) / noOfTrain).toFixed(0)}/-`,
+              `${(offer_Price * TotalNumberOfModule).toLocaleString("en-IN")}/-`,
+            ]
+          : [
+              "1.",
+              `Blufox - MBR Membranes\nPlant Capacity: ${flowRate} KLD ${treatment_Type}\nwith SS304 Skid(Frame)`,
+              `${noOfTrain} Block${noOfTrain > 1 ? "s" : ""}`,
+              `${(offer_Price * TotalNumberOfModule).toLocaleString("en-IN")}/-`,
+            ],
+
+        noOfTrain > 1
+          ? [
+              "",
+              "",
+              "",
+              "Total Price (Rs.)",
+              `${(offer_Price * TotalNumberOfModule).toLocaleString("en-IN")}/-`,
+            ]
+          : [
+              "",
+              "",
+              "Total Price (Rs.)",
+              `${(offer_Price * TotalNumberOfModule).toLocaleString("en-IN")}/-`,
+            ],
       ],
       tableWidth: 175,
       margin: { left: 15 },
@@ -403,7 +605,14 @@ export async function generate500DProposal(
         fontStyle: "bold",
         halign: "center",
       },
-      styles: { fontStyle: "normal", halign: "center", textColor: 0 },
+      styles: {
+        fontStyle: "normal",
+        halign: "center",
+        textColor: 0,
+      },
+      columnStyles: {
+        1: { halign: "left" }, // 2nd column (index starts from 0)
+      },
       didParseCell: function (data) {
         if (data.column.index === 2 || data.column.index === 3) {
           data.cell.styles.halign = "center";
@@ -471,7 +680,7 @@ export async function generate500DProposal(
     const pageBottomLimit = pageHeight - footerHeight - 10; // Buffer space before footer
 
     // Function to handle Page Breaks
-    async function checkPageBreak(requiredSpace) {
+    async function checkPageBreak(requiredSpace: number) {
       if (currentY + requiredSpace > pageBottomLimit) {
         doc.addPage();
         await drawBackground(doc, watermark);
@@ -498,6 +707,7 @@ export async function generate500DProposal(
     const warehouseText = [
       "1. Charges will be 0.5% on Plant Value, if not picked up as per the dispatch schedule agreed at the time of order finalization. ",
       "2. If applicable, need to be clear separately before the dispatch of material",
+      "3. Replacement material delivery to & fro under Client scope in future.",
     ];
     warehouseText.forEach((text) => {
       let lines = doc.splitTextToSize(text, 165);
@@ -566,7 +776,7 @@ export async function generate500DProposal(
       const specialLines = doc.splitTextToSize(special_Terms, textWidth);
 
       // Loop through EVERY line. This allows the text to break across pages gracefully.
-      specialLines.forEach((line) => {
+      specialLines.forEach((line: string) => {
         checkPageBreak(lineHeight); // Check if 1 line fits
         doc.text(line, contentStartX, currentY);
         currentY += lineHeight;
@@ -648,16 +858,90 @@ export async function generate500DWordProposal(
 
     let membraneSurfaceAreaPerMBR = 0;
     // Perform calculations based on formulas
-    if (module == "500D") {
+    if (module == "500D(340)") {
       membraneSurfaceAreaPerMBR = 31.6;
+    } else if (module == "500D(370)") {
+      membraneSurfaceAreaPerMBR = 34.4;
+    } else if (module == "500D(430)") {
+      membraneSurfaceAreaPerMBR = 40.9;
     }
 
+    
+
+    const effectiveFlowRate = flowRate / 20;
+    const perTrainFlowRate = parseFloat(
+      (effectiveFlowRate / noOfTrain).toString(),
+    ).toFixed(2);
     const TotalNumberOfModule = Math.ceil(
       (flowRate * 1000) / (flux * workingHr * membraneSurfaceAreaPerMBR),
     );
+    const NoofModulePerTrain = Math.ceil(TotalNumberOfModule / noOfTrain);
+    const MembraneSurfaceAreaPerTrain =
+      NoofModulePerTrain * membraneSurfaceAreaPerMBR;
+
+    let length = 0;
+    let width = 0;
+    let height = 0;
+    let effectiveWaterDepth = 0;
+    let tanklength = 0;
+    let tankwidth = 0;
+    let tankheight = 0;
+    let surfaceareapertrain = 0;
+
+    // Logic updated to handle SUS113 dimensions
+    if (module == "500D(340)") {
+      length =
+        (NoofModulePerTrain * 49 + (NoofModulePerTrain) * 15 + 100) / 1000;
+      width = 0.944;
+      height = 2.798;
+      effectiveWaterDepth = 3.098;
+      surfaceareapertrain =
+        (Number(length) + 0.6) * (width + 0.6) * (height + 0.7);
+      tanklength = length * noOfTrain + (noOfTrain - 1) * 0.100 + 0.600;
+      tankwidth =
+        width * (noOfTrain === 1 ? 1 : Math.ceil(noOfTrain / 2)) +
+        ((noOfTrain === 1 ? 1 : Math.ceil(noOfTrain / 2)) - 1) * 0.100 +
+        0.600;
+      tankheight = effectiveWaterDepth + 0.4;
+    } else if (module == "500D(370)") {
+      length =
+        (NoofModulePerTrain * 49 + (NoofModulePerTrain) * 15 + 100) / 1000;
+      width = 0.944;
+      height = 2.798;
+      effectiveWaterDepth = 3.098;
+      surfaceareapertrain =
+        (Number(length) + 0.6) * (width + 0.6) * (height + 0.7);
+      tanklength = length * noOfTrain + (noOfTrain - 1) * 0.1 + 0.6;
+      tankwidth =
+        width * (noOfTrain === 1 ? 1 : Math.ceil(noOfTrain / 2)) +
+        ((noOfTrain === 1 ? 1 : Math.ceil(noOfTrain / 2)) - 1) * 0.1 +
+        0.6;
+      tankheight = effectiveWaterDepth + 0.4;
+    } else if (module == "500D(430)") {
+      length =
+        (NoofModulePerTrain * 49 + (NoofModulePerTrain) * 15 + 100) / 1000;
+      width = 0.944;
+      height = 2.798;
+      effectiveWaterDepth = 3.098;
+      surfaceareapertrain =
+        (Number(length) + 0.6) * (width + 0.6) * (height + 0.7);
+      tanklength = length * noOfTrain + (noOfTrain - 1) * 0.1 + 0.6;
+      tankwidth =
+        width * (noOfTrain === 1 ? 1 : Math.ceil(noOfTrain / 2)) +
+        ((noOfTrain === 1 ? 1 : Math.ceil(noOfTrain / 2)) - 1) * 0.1 +
+        0.6;
+      tankheight = effectiveWaterDepth + 0.4;
+    }
+    const TotalMembraneTankVolume = (
+      Number(tanklength) *
+      Number(tankwidth) *
+      Number(tankheight)
+    ).toFixed(2);
+
     const TotalMembraneSurfaceArea = (
       TotalNumberOfModule * membraneSurfaceAreaPerMBR
     ).toFixed(1);
+
 
     let boxpipe = 0;
     if (TotalNumberOfModule >= 15) {
@@ -670,6 +954,14 @@ export async function generate500DWordProposal(
       RequiredtotalAirFlowRate = Number(TotalMembraneSurfaceArea) * 0.3;
     }
     RequiredtotalAirFlowRate = parseFloat(RequiredtotalAirFlowRate.toFixed(2));
+
+    const RequiredTotalFlowrateforpeakflux = Number(
+      (flowRate / workingHr).toFixed(2),
+    );
+    const RequiredBackwashFlowRate = Number(
+      (RequiredTotalFlowrateforpeakflux * 1.5).toFixed(2),
+    );
+    const RasPumpFlow = +((flowRate / 24) * 3).toFixed(2);
 
     const formattedDate = formatToDDMMYYYY(date);
 
@@ -809,7 +1101,6 @@ export async function generate500DWordProposal(
             },
           },
           children: [
-            new Paragraph({ text: "" }),
             new Paragraph({
               children: [
                 new TextRun({ text: "" }),
@@ -834,7 +1125,7 @@ export async function generate500DWordProposal(
               children: [
                 new TextRun({ text: "Proposal: ", bold: true, size: 24 }),
                 new TextRun({
-                  text: `Techno Commercial offer for BLUFOX® BF500D 31.6m2 MBR Membranes`,
+                  text: `Techno Commercial offer for BLUFOX® BF500D ${membraneSurfaceAreaPerMBR}m2 MBR Membranes`,
                   size: 24,
                 }),
               ],
@@ -882,7 +1173,6 @@ export async function generate500DWordProposal(
 
             new Paragraph({ children: [new PageBreak()] }),
 
-            new Paragraph({ text: "" }),
             new Paragraph({
               children: [
                 new TextRun({
@@ -942,8 +1232,6 @@ export async function generate500DWordProposal(
               .flat(),
             new Paragraph({ children: [new PageBreak()] }),
 
-            new Paragraph({ text: "" }),
-            new Paragraph({ text: "" }),
             ...[
               {
                 t: "Reproduction of Nitro bacteria:",
@@ -1102,7 +1390,6 @@ export async function generate500DWordProposal(
 
             new Paragraph({ children: [new PageBreak()] }),
 
-            new Paragraph({ text: "" }),
             new Paragraph({
               children: [
                 new TextRun({ text: "Note: ", bold: true }),
@@ -1217,8 +1504,152 @@ export async function generate500DWordProposal(
               text: "MBR system work in base of “Continuous Blower, Intermittent Permeate” with 7/8mins Work and 2mins Stop. Backwash per 3-4hrs with 2mins, CEB per 7day with 90mins",
             }),
             new Paragraph({ children: [new PageBreak()] }),
-
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "Offer Parameter",
+                  bold: true,
+                  size: 28,
+                  color: "00008B",
+                  italics: true,
+                }),
+              ],
+            }),
+            new Table({
+              width: { size: 100, type: WidthType.PERCENTAGE },
+              borders: {
+                top: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                bottom: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                left: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                right: { style: BorderStyle.SINGLE, size: 4, color: "D3D3D3" },
+                insideHorizontal: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+                insideVertical: {
+                  style: BorderStyle.SINGLE,
+                  size: 4,
+                  color: "D3D3D3",
+                },
+              },
+              rows: [
+                new TableRow({
+                  children: ["Parameters", "Unit", "Range"].map(
+                    (h) =>
+                      new TableCell({
+                        verticalAlign: VerticalAlign.CENTER,
+                        margins: {
+                          top: 80,
+                          bottom: 80,
+                          left: 200,
+                          right: 200,
+                        },
+                        children: [
+                          new Paragraph({
+                            children: [new TextRun({ text: h, bold: true })],
+                          }),
+                        ],
+                        shading: { fill: "A9A9A9" },
+                      }),
+                  ),
+                }),
+                ...[
+                  ["Flow Rate of the system", "KLD", `${flowRate}`],
+                  [
+                    "Effective flow Rate",
+                    "m3/hr",
+                    `${effectiveFlowRate.toFixed(2)}`,
+                  ],
+                  ["Design Frame/Train Qty", "Nos", `${noOfTrain}`],
+                  [
+                    "Per Frame/Train Flow Rate ",
+                    "m3/hr",
+                    `${perTrainFlowRate}`,
+                  ],
+                  ["Design Flux (Avg.)", "LMH", `${flux}`],
+                  [
+                    "Total MBR Module Required",
+                    "No.",
+                    `${TotalNumberOfModule}`,
+                  ],
+                  [
+                    "Per Frame MBR Module Required",
+                    "No.",
+                    `${NoofModulePerTrain}`,
+                  ],
+                  [
+                    "Per Frame MBR Module Surface Area",
+                    "m2",
+                    `${MembraneSurfaceAreaPerTrain}`,
+                  ],
+                  [
+                    "Total MBR Membrane Surface Area",
+                    "m2",
+                    `${TotalMembraneSurfaceArea}`,
+                  ],
+                  [
+                    "Total MBR Air Required",
+                    "m3/hr",
+                    `${RequiredtotalAirFlowRate}`,
+                  ],
+                  [
+                    "MBR Frame/Train Size (Each)",
+                    "L x W x H mm",
+                    `${Math.ceil(length * 1000)} x ${Math.ceil(width * 1000)} x ${Math.ceil(height * 1000)}`,
+                  ],
+                  ["MBR Frame MOC", "-", `SS304`],
+                  [
+                    "MBR Tank Volume Required",
+                    "m3",
+                    `${TotalMembraneTankVolume}`,
+                  ],
+                  [
+                    "Permeate Pump Flow",
+                    "m3/hr",
+                    `${RequiredTotalFlowrateforpeakflux}`,
+                  ],
+                  [
+                    "Back Wash Pump Flow",
+                    "m3/hr",
+                    `${RequiredBackwashFlowRate}`,
+                  ],
+                  ["RAS Pump Flow ", "m3", `${RasPumpFlow}`],
+                ].map(
+                  (row, index) =>
+                    new TableRow({
+                      children: row.map(
+                        (c) =>
+                          new TableCell({
+                            verticalAlign: VerticalAlign.CENTER,
+                            shading: {
+                              fill: index % 2 === 0 ? "F0F0F0" : "FFFFFF",
+                            },
+                            margins: {
+                              top: 80,
+                              bottom: 80,
+                              left: 200,
+                              right: 200,
+                            },
+                            children: [new Paragraph({ text: c.toString() })],
+                          }),
+                      ),
+                    }),
+                ),
+              ],
+            }),
             new Paragraph({ text: "" }),
+            new Paragraph({
+              children: [new TextRun({ text: "Note:", bold: true })],
+            }),
+            new Paragraph({
+              text: "1. Vertical Distance between the water level in the MBR tank and back wash tank shall not be more than 0.7mtr",
+            }),
+            new Paragraph({
+              text: "2. Maintain the water level 300-500mm above the MBR frame / Module.",
+            }),
+            new Paragraph({ children: [new PageBreak()] }),
+
             new Paragraph({
               children: [
                 new TextRun({
@@ -1238,7 +1669,7 @@ export async function generate500DWordProposal(
                   transformation: { width: 530, height: 750 },
                   type: "jpg",
                 }),
-              ],
+              ], indent: { left: 100 },
             }),
 
             new Paragraph({ children: [new PageBreak()] }),
@@ -1286,7 +1717,16 @@ export async function generate500DWordProposal(
               },
               rows: [
                 new TableRow({
-                  children: ["No.", "Item", "Qty.", "Total Price (Rs.)"].map(
+                  children: (noOfTrain > 1
+                    ? [
+                        "No.",
+                        "Item",
+                        "Qty.",
+                        "Price/Block",
+                        "Total Price (Rs.)",
+                      ]
+                    : ["No.", "Item", "Qty.", "Total Price (Rs.)"]
+                  ).map(
                     (h) =>
                       new TableCell({
                         verticalAlign: VerticalAlign.CENTER,
@@ -1348,11 +1788,31 @@ export async function generate500DWordProposal(
                       },
                       children: [
                         new Paragraph({
-                          text: `${TotalNumberOfModule}`,
+                          text: `${noOfTrain} Block${noOfTrain > 1 ? "s" : ""}`,
                           alignment: AlignmentType.CENTER,
                         }),
                       ],
                     }),
+                    ...(noOfTrain > 1
+                      ? [
+                          new TableCell({
+                            verticalAlign: VerticalAlign.CENTER,
+                            margins: {
+                              top: 80,
+                              bottom: 80,
+                              left: 200,
+                              right: 200,
+                            },
+                            children: [
+                              new Paragraph({
+                                text: `${((offer_Price * TotalNumberOfModule) / noOfTrain).toFixed(0)}/-`,
+                                alignment: AlignmentType.CENTER,
+                              }),
+                            ],
+                          }),
+                        ]
+                      : []),
+
                     new TableCell({
                       verticalAlign: VerticalAlign.CENTER,
                       margins: {
@@ -1374,6 +1834,13 @@ export async function generate500DWordProposal(
                   children: [
                     new TableCell({ children: [new Paragraph({ text: "" })] }),
                     new TableCell({ children: [new Paragraph({ text: "" })] }),
+                    ...(noOfTrain > 1
+                      ? [
+                          new TableCell({
+                            children: [new Paragraph({ text: "" })],
+                          }),
+                        ]
+                      : []),
                     new TableCell({
                       children: [
                         new Paragraph({
@@ -1476,12 +1943,46 @@ export async function generate500DWordProposal(
               spacing: { line: 380 },
             }),
             new Paragraph({
-              text: "1. Charges will be 0.5% on Plant Value, if not picked up as per the dispatch schedule agreed at the time of order finalization.",
-              indent: { left: 350 },
+              children: [
+                new TextRun({
+                  text: "1.  ",
+                }),
+                new TextRun({
+                  text: "Charges will be 0.5% on Plant Value, if not picked up as per the dispatch schedule agreed at the time of order finalization.",
+                }),
+              ],
+              indent: {
+                left: 400,
+                hanging: 250,
+              },
             }),
             new Paragraph({
-              text: "2. If applicable, need to be clear separately before the dispatch of material",
-              indent: { left: 350 },
+              children: [
+                new TextRun({
+                  text: "2.  ",
+                }),
+                new TextRun({
+                  text: "If applicable, need to be clear separately before the dispatch of materials.",
+                }),
+              ],
+              indent: {
+                left: 400,
+                hanging: 250,
+              },
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "3.  ",
+                }),
+                new TextRun({
+                  text: "Replacement material delivery to & fro under Client scope in future.",
+                }),
+              ],
+              indent: {
+                left: 400,
+                hanging: 250,
+              },
             }),
             new Paragraph({ text: "" }),
 
@@ -1497,22 +1998,64 @@ export async function generate500DWordProposal(
               ],
               spacing: { line: 380 },
             }),
+
             new Paragraph({
-              text: "• Loading / Unloading charges must be paid by Client to the transporter directly, with duly signed copy of authorized signatory on ‘packing list’.",
-              indent: { left: 350 },
+              children: [
+                new TextRun({
+                  text: "•  ",
+                }),
+                new TextRun({
+                  text: "Loading / Unloading charges must be paid directly to the transporter by the Client against a duly signed packing list authorized by the Client’s signatory.",
+                }),
+              ],
+              indent: {
+                left: 400,
+                hanging: 250,
+              },
             }),
             new Paragraph({
-              text: "• Checking & verifying all the materials, as mentioned in packing list is a due responsibility of client. Any misplacement or damaged equipment afterwards will not be acceptable.",
-              indent: { left: 350 },
+              children: [
+                new TextRun({
+                  text: "•  ",
+                }),
+                new TextRun({
+                  text: "Checking & verifying all the materials, as mentioned in packing list is a due responsibility of client. Any misplacement or damaged equipment afterwards will not be acceptable.",
+                }),
+              ],
+              indent: {
+                left: 400,
+                hanging: 250,
+              },
             }),
             new Paragraph({
-              text: "• Any damage during the unloading of materials or shifting of equipment’s to the particular place will not be entertained & the whole and soul responsibility will be of client.",
-              indent: { left: 350 },
+              children: [
+                new TextRun({
+                  text: "•  ",
+                }),
+                new TextRun({
+                  text: "Any damage during the unloading of materials or shifting of equipment’s to the particular place will not be entertained & the whole and soul responsibility will be of client.",
+                }),
+              ],
+              indent: {
+                left: 400,
+                hanging: 250,
+              },
             }),
             new Paragraph({
-              text: "• Any unskilled labour and/or any unloading equipment required during the unloading/ shifting of materials at site will be the responsibility of concerned party/person present at site only.",
-              indent: { left: 350 },
+              children: [
+                new TextRun({
+                  text: "•  ",
+                }),
+                new TextRun({
+                  text: "Any unskilled labour and/or any unloading equipment required during the unloading/ shifting of materials at site will be the responsibility of concerned party/person present at site only.",
+                }),
+              ],
+              indent: {
+                left: 400,
+                hanging: 250,
+              },
             }),
+
             new Paragraph({ text: "" }),
             //Delivery Time
             new Paragraph({
